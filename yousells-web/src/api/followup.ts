@@ -3,7 +3,7 @@ import type { ApiResponse, PageResponse } from "@/types/api";
 import type { FollowUpRecord } from "@/types/followup";
 
 export async function fetchFollowUps(customerId: string | number): Promise<PageResponse<FollowUpRecord>> {
-  const response = await request.get<ApiResponse<PageResponse<FollowUpRecord>>>("/api/follow-ups", {
+  const response = await request.get<ApiResponse<PageResponse<FollowUpRecord>>>("/follow-ups", {
     params: {
       customerId,
       page: 1,

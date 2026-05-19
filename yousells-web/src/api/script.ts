@@ -3,12 +3,12 @@ import type { ApiResponse, PageResponse } from "@/types/api";
 import type { ScriptCategory, ScriptItem } from "@/types/script";
 
 export async function fetchScriptCategories(): Promise<ScriptCategory[]> {
-  const response = await request.get<ApiResponse<ScriptCategory[]>>("/api/scripts/categories");
+  const response = await request.get<ApiResponse<ScriptCategory[]>>("/scripts/categories");
   return response.data.data;
 }
 
 export async function fetchScripts(page = 1, pageSize = 20): Promise<PageResponse<ScriptItem>> {
-  const response = await request.get<ApiResponse<PageResponse<ScriptItem>>>("/api/scripts", {
+  const response = await request.get<ApiResponse<PageResponse<ScriptItem>>>("/scripts", {
     params: { page, pageSize }
   });
   return response.data.data;

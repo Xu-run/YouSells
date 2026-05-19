@@ -2,13 +2,13 @@ package com.yousells.modules.auth.service;
 
 import com.yousells.modules.auth.dto.LoginRequest;
 import com.yousells.modules.auth.vo.CurrentUserVo;
-import jakarta.servlet.http.HttpSession;
+import com.yousells.modules.auth.vo.LoginResultVo;
 
 public interface AuthService {
 
-    CurrentUserVo login(LoginRequest request, HttpSession session);
+    LoginResultVo login(LoginRequest request);
 
     CurrentUserVo currentUser();
 
-    void logout(HttpSession session);
+    void logout();
 }

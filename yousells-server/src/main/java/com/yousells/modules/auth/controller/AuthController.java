@@ -4,8 +4,8 @@ import com.yousells.common.response.ApiResponse;
 import com.yousells.modules.auth.dto.LoginRequest;
 import com.yousells.modules.auth.service.AuthService;
 import com.yousells.modules.auth.vo.CurrentUserVo;
+import com.yousells.modules.auth.vo.LoginResultVo;
 import jakarta.validation.Valid;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,8 +23,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<CurrentUserVo> login(@Valid @RequestBody LoginRequest request, HttpSession session) {
-        return ApiResponse.success(authService.login(request, session));
+    public ApiResponse<LoginResultVo> login(@Valid @RequestBody LoginRequest request) {
+        return ApiResponse.success(authService.login(request));
     }
 
     @GetMapping("/me")
@@ -33,8 +33,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ApiResponse<Void> logout(HttpSession session) {
-        authService.logout(session);
+    public ApiResponse<Void> logout() {
+        authService.logout();
         return ApiResponse.success();
     }
 }

@@ -1,11 +1,9 @@
 package com.yousells.modules.dashboard;
 
-import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -15,6 +13,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -46,11 +46,16 @@ class DashboardControllerIntegrationTest {
                                 }
                                 """))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken", not(emptyOrNullString())))
                 .andReturn();
 
-        HttpSession session = loginResult.getRequest().getSession(false);
+        String accessToken = com.yousells.modules.auth.JsonTestUtils.readJsonPath(
+                loginResult.getResponse().getContentAsString(),
+                "$.data.accessToken"
+        );
 
-        mockMvc.perform(get("/api/dashboard/overview").session((MockHttpSession) session))
+        mockMvc.perform(get("/api/dashboard/overview")
+                        .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.todayPendingFollowCount").value(1))

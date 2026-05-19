@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import PageSection from "@/components/app/PageSection.vue";
 import { fetchDashboardOverview } from "@/api/dashboard";
 import type { DashboardOverview } from "@/types/dashboard";
+import { isUnauthorizedError } from "@/utils/request-error";
 
 const loading = ref(false);
 const overview = ref<DashboardOverview | null>(null);
@@ -25,6 +26,9 @@ async function loadOverview() {
   try {
     overview.value = await fetchDashboardOverview();
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return;
+    }
     ElMessage.error(error instanceof Error ? error.message : "首页看板加载失败");
   } finally {
     loading.value = false;

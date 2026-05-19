@@ -4,3 +4,10 @@ export interface CurrentUser {
   displayName: string;
   roles: string[];
 }
+
+export interface LoginResult {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+  userInfo: CurrentUser;
+}

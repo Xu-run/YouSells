@@ -65,16 +65,18 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const authStore = useAuthStore();
 
-  if (!authStore.initialized && to.name !== RouteName.Login) {
+  if (!authStore.initialized) {
     try {
-      await authStore.fetchCurrentUserAction();
+      await authStore.initializeAuthAction();
     } catch {
-      return {
-        name: RouteName.Login,
-        query: {
-          redirect: to.fullPath
-        }
-      };
+      if (to.meta.requiresAuth) {
+        return {
+          name: RouteName.Login,
+          query: {
+            redirect: to.fullPath
+          }
+        };
+      }
     }
   }
 
