@@ -60,9 +60,9 @@ Use the project docs under `docs/` to keep planning visible.
 
 Before parallel module work, also align with:
 
-- `docs/11_后端架构收口与协作边界规范.md`
-- `docs/06_P0开发任务分配方案.md`
-- `docs/05_开发流程与日志规范.md`
+- `docs/00_文档导航.md`
+- `docs/02_协作规范与架构边界.md`
+- `docs/03_P0任务分配与进度管理.md`
 
 ### 3. Development Log
 

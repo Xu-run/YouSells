@@ -1,0 +1,146 @@
+<mxfile host="app.diagrams.net" modified="2026-05-19T18:10:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="yousells-p0-architecture" name="YouSells P0 Architecture">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="YouSells P0 项目架构图" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;fontColor=#0f172a;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="520" y="30" width="560" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="当前阶段：单体后端 + Vue 前端 + JWT 鉴权 + MySQL/Redis 本地服务 + 模块化协作边界" style="text;html=1;strokeColor=none;fillColor=none;fontSize=15;fontColor=#475569;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="390" y="80" width="820" height="32" as="geometry" />
+        </mxCell>
+
+        <mxCell id="users" value="团队成员&lt;br&gt;管理员 / 成员&lt;br&gt;50-100 人内部使用" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfeff;strokeColor=#0891b2;fontSize=15;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="60" y="210" width="170" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="browser" value="浏览器&lt;br&gt;localhost:5173&lt;br&gt;登录 / 看板 / 客户 / 跟进 / 报表 / 话术" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f9ff;strokeColor=#0284c7;fontSize=15;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="290" y="200" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="frontend" value="yousells-web&lt;br&gt;Vue 3 + TypeScript + Vite&lt;br&gt;Pinia / Router / Element Plus&lt;br&gt;Axios 请求封装" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2fe;strokeColor=#0369a1;fontSize=15;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="570" y="180" width="250" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="proxy" value="Vite Dev Proxy&lt;br&gt;/api -&gt; 127.0.0.1:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#64748b;fontSize=14;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="880" y="215" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="backend" value="yousells-server&lt;br&gt;Spring Boot 3.5 / JDK 21&lt;br&gt;统一响应 / 异常处理 / 安全过滤器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfdf5;strokeColor=#059669;fontSize=15;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="180" width="280" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="auth" value="auth + security&lt;br&gt;JWT Bearer Token&lt;br&gt;/api/auth/login&lt;br&gt;/api/auth/me" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#d97706;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="390" width="210" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="common" value="common&lt;br&gt;config / constant / exception&lt;br&gt;response / security / BaseEntity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fefce8;strokeColor=#ca8a04;fontSize=14;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="390" width="210" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="customer" value="customer&lt;br&gt;客户 / 标签 / 详情&lt;br&gt;负责人：志明" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4f46e5;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="760" y="590" width="180" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="followup" value="followup&lt;br&gt;跟进记录&lt;br&gt;负责人：志明" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4f46e5;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="970" y="590" width="180" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="task" value="task&lt;br&gt;公共安排&lt;br&gt;负责人：哲涛" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdf2f8;strokeColor=#db2777;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="590" width="180" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="report" value="report&lt;br&gt;日报 / 周报&lt;br&gt;负责人：哲涛" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdf2f8;strokeColor=#db2777;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1390" y="590" width="180" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="script" value="script&lt;br&gt;话术库&lt;br&gt;负责人：哲涛" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdf2f8;strokeColor=#db2777;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="970" y="740" width="180" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="dashboard" value="dashboard&lt;br&gt;首页聚合&lt;br&gt;只通过 service 聚合&lt;br&gt;负责人：秦梓源" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="740" width="190" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="mysql" value="MySQL 8&lt;br&gt;localhost:13306&lt;br&gt;P0 表结构 + 种子数据" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dbeafe;strokeColor=#2563eb;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="570" y="760" width="190" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="Redis&lt;br&gt;localhost:16379&lt;br&gt;P0 轻用 / 后续扩展" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#fee2e2;strokeColor=#dc2626;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="570" y="600" width="190" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="github" value="GitHub&lt;br&gt;origin/main&lt;br&gt;PR 协作 / 分支开发" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#475569;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="60" y="490" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="docs" value="docs&lt;br&gt;00 导航 / 01 总览&lt;br&gt;02 规范 / 03 任务&lt;br&gt;04 数据API / 05 启动验收" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#faf5ff;strokeColor=#9333ea;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="300" y="480" width="230" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="testing" value="验收基线&lt;br&gt;mvn test&lt;br&gt;npm run build&lt;br&gt;浏览器登录验收" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#ea580c;fontSize=14;fontStyle=1;arcSize=16;" vertex="1" parent="1">
+          <mxGeometry x="300" y="680" width="230" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-users-browser" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#334155;strokeWidth=2;" edge="1" parent="1" source="users" target="browser">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-browser-frontend" value="页面访问" style="endArrow=block;html=1;rounded=0;strokeColor=#334155;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="browser" target="frontend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-frontend-proxy" value="/api" style="endArrow=block;html=1;rounded=0;strokeColor=#334155;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="frontend" target="proxy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-proxy-backend" value="HTTP JSON" style="endArrow=block;html=1;rounded=0;strokeColor=#334155;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="proxy" target="backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-backend-auth" value="Security Filter" style="endArrow=block;html=1;rounded=0;strokeColor=#d97706;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="backend" target="auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-backend-common" value="共享能力" style="endArrow=block;html=1;rounded=0;strokeColor=#ca8a04;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="backend" target="common">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-backend-customer" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#059669;strokeWidth=2;" edge="1" parent="1" source="backend" target="customer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-backend-followup" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#059669;strokeWidth=2;" edge="1" parent="1" source="backend" target="followup">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-backend-task" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#059669;strokeWidth=2;" edge="1" parent="1" source="backend" target="task">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-backend-report" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#059669;strokeWidth=2;" edge="1" parent="1" source="backend" target="report">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-backend-script" value="" style="endArrow=block;html=1;rounded=0;strokeColor=#059669;strokeWidth=2;" edge="1" parent="1" source="backend" target="script">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-dashboard-customer" value="service" style="endArrow=block;html=1;rounded=0;strokeColor=#16a34a;strokeWidth=2;dashed=1;fontSize=12;" edge="1" parent="1" source="dashboard" target="customer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-dashboard-followup" value="service" style="endArrow=block;html=1;rounded=0;strokeColor=#16a34a;strokeWidth=2;dashed=1;fontSize=12;" edge="1" parent="1" source="dashboard" target="followup">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-dashboard-task" value="service" style="endArrow=block;html=1;rounded=0;strokeColor=#16a34a;strokeWidth=2;dashed=1;fontSize=12;" edge="1" parent="1" source="dashboard" target="task">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-customer-mysql" value="mapper" style="endArrow=block;html=1;rounded=0;strokeColor=#2563eb;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="customer" target="mysql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-followup-mysql" value="mapper" style="endArrow=block;html=1;rounded=0;strokeColor=#2563eb;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="followup" target="mysql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-task-mysql" value="mapper" style="endArrow=block;html=1;rounded=0;strokeColor=#2563eb;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="task" target="mysql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-report-mysql" value="mapper" style="endArrow=block;html=1;rounded=0;strokeColor=#2563eb;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="report" target="mysql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-script-mysql" value="mapper" style="endArrow=block;html=1;rounded=0;strokeColor=#2563eb;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="script" target="mysql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-backend-redis" value="预留缓存 / 限流 / 后续 token 状态" style="endArrow=block;html=1;rounded=0;strokeColor=#dc2626;strokeWidth=2;dashed=1;fontSize=12;" edge="1" parent="1" source="backend" target="redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-github-docs" value="协作规范" style="endArrow=block;html=1;rounded=0;strokeColor=#9333ea;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="github" target="docs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-docs-testing" value="验收标准" style="endArrow=block;html=1;rounded=0;strokeColor=#ea580c;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="docs" target="testing">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
