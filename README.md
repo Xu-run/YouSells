@@ -22,6 +22,13 @@
 - 开发模式：`5 人开发团队`
 - 第一阶段重点：先做 `P0`，先把主流程跑通
 
+当前代码层已经落地的基础设施：
+
+- `yousells-server`：Spring Boot 后端骨架、Session/Cookie 鉴权基线、统一响应/异常处理、P0 模块接口占位、基础接口测试
+- `yousells-web`：Vue 3 前端骨架、登录页、主布局、路由守卫、认证 store、API 请求层、P0 页面占位与示例数据联动
+- `yousells-server/src/main/resources/db`：P0 数据库建表脚本与初始化种子数据
+- `docker-compose.yml`：MySQL + Redis 本地开发依赖基线
+
 ## 当前定下来的技术方向
 
 - 后端：`JDK 21 + Spring Boot 3.x + Spring Security + MyBatis-Plus`
@@ -39,6 +46,9 @@
 - [开发分工与首期推进](./docs/04_开发分工与首期推进.md)
 - [开发流程与日志规范](./docs/05_开发流程与日志规范.md)
 - [P0开发任务分配方案](./docs/06_P0开发任务分配方案.md)
+- [数据库表设计](./docs/07_数据库表设计.md)
+- [API接口基线](./docs/08_API接口基线.md)
+- [工程目录初始化方案](./docs/09_工程目录初始化方案.md)
 
 ## 当前建议的开发顺序
 
@@ -46,6 +56,18 @@
 2. 再定数据库表设计
 3. 再拆前后端页面与接口
 4. 再开始正式开发
+
+## 当前代码结构
+
+- `yousells-server/`：后端工程
+- `yousells-web/`：前端工程
+- `docs/`：需求、规划、规范与日志
+- `.codex/skills/yousells-dev/`：项目专属开发规范 skill
+
+## 本地运行提示
+
+- 后端如果被全局 Maven 配置劫持到其他私服，优先使用 `yousells-server/.mvn/settings.xml`
+- 前端在 PowerShell 下如遇 `npm.ps1` 执行策略问题，改用 `cmd /c npm ...`
 
 ## 当前最重要的原则
 
