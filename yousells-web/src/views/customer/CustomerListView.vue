@@ -3,8 +3,8 @@ import { onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 import PageSection from "@/components/app/PageSection.vue";
 import EmptyStateCard from "@/components/app/EmptyStateCard.vue";
-import { fetchCustomers } from "@/api/customer";
-import type { CustomerListItem, CustomerQuery } from "@/types/customer";
+import { fetchCustomers } from "@/api/customer-list";
+import type { CustomerListItem, CustomerQuery } from "@/types/customer-list";
 
 const loading = ref(false);
 const customers = ref<CustomerListItem[]>([]);

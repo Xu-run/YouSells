@@ -4,9 +4,9 @@ import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import PageSection from "@/components/app/PageSection.vue";
 import EmptyStateCard from "@/components/app/EmptyStateCard.vue";
-import { fetchCustomerDetail } from "@/api/customer";
+import { fetchCustomerDetail } from "@/api/customer-detail";
 import { fetchFollowUps } from "@/api/followup";
-import type { CustomerDetail } from "@/types/customer";
+import type { CustomerDetail } from "@/types/customer-detail";
 import type { FollowUpRecord } from "@/types/followup";
 
 const route = useRoute();
