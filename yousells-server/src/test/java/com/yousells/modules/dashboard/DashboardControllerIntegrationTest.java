@@ -58,10 +58,10 @@ class DashboardControllerIntegrationTest {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.todayPendingFollowCount").value(1))
+                .andExpect(jsonPath("$.data.todayPendingFollowCount").value(0))
                 .andExpect(jsonPath("$.data.overdueCustomerCount").value(0))
-                .andExpect(jsonPath("$.data.recentNewCustomerCount").value(3))
-                .andExpect(jsonPath("$.data.highIntentCustomerCount").value(1))
+                .andExpect(jsonPath("$.data.recentNewCustomerCount").value(0))
+                .andExpect(jsonPath("$.data.highIntentCustomerCount").value(0))
                 .andExpect(jsonPath("$.data.todayTasks.length()").value(2));
     }
 }

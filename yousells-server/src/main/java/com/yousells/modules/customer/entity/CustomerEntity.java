@@ -1,18 +1,16 @@
 package com.yousells.modules.customer.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.yousells.common.entity.BaseEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("customers")
-public class CustomerEntity {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class CustomerEntity extends BaseEntity {
 
     private String customerCode;
 
@@ -57,14 +55,4 @@ public class CustomerEntity {
     private String conversionResult;
 
     private String remarks;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    private Long createdBy;
-
-    private Long updatedBy;
-
-    private Integer isDeleted;
 }

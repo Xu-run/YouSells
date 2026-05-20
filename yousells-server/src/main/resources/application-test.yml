@@ -1,7 +1,4 @@
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
   datasource:
     url: jdbc:h2:mem:yousells;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
     username: sa

@@ -4,9 +4,14 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     display_name VARCHAR(64) NOT NULL,
     real_name VARCHAR(64) NULL,
+    phone VARCHAR(32) NULL,
+    email VARCHAR(128) NULL,
     status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    last_login_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT NULL,
+    updated_by BIGINT NULL,
     is_deleted INT NOT NULL DEFAULT 0
 );
 
