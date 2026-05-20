@@ -84,3 +84,72 @@ CREATE TABLE IF NOT EXISTS customer_follow_ups (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted INT NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS task_boards (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    task_title VARCHAR(255) NOT NULL,
+    task_type VARCHAR(64) NULL,
+    task_description TEXT NULL,
+    status VARCHAR(32) NOT NULL,
+    priority VARCHAR(32) NOT NULL,
+    owner_user_id BIGINT NOT NULL,
+    assistant_user_id BIGINT NULL,
+    start_at DATETIME NULL,
+    due_at DATETIME NULL,
+    next_action VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT NULL,
+    updated_by BIGINT NULL,
+    is_deleted INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS daily_reports (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    report_date DATE NOT NULL,
+    user_id BIGINT NOT NULL,
+    today_work TEXT NOT NULL,
+    issues TEXT NULL,
+    tomorrow_plan TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_daily_reports (report_date, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS weekly_reports (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    week_key VARCHAR(32) NOT NULL,
+    user_id BIGINT NOT NULL,
+    weekly_summary TEXT NOT NULL,
+    issues TEXT NULL,
+    next_week_plan TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_weekly_reports (week_key, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS script_categories (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    category_code VARCHAR(64) NOT NULL,
+    category_name VARCHAR(64) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS scripts (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    category_id BIGINT NOT NULL,
+    title VARCHAR(128) NOT NULL,
+    content TEXT NOT NULL,
+    applicable_scene VARCHAR(255) NULL,
+    status VARCHAR(32) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT NULL,
+    updated_by BIGINT NULL,
+    is_deleted INT NOT NULL DEFAULT 0
+);

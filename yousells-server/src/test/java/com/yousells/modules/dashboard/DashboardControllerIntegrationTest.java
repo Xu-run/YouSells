@@ -62,6 +62,6 @@ class DashboardControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.overdueCustomerCount").value(0))
                 .andExpect(jsonPath("$.data.recentNewCustomerCount").value(0))
                 .andExpect(jsonPath("$.data.highIntentCustomerCount").value(0))
-                .andExpect(jsonPath("$.data.todayTasks.length()").value(2));
+                .andExpect(jsonPath("$.data.todayTasks.length()").value(0));
     }
 }
