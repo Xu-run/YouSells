@@ -1,69 +1,93 @@
 package com.yousells.modules.script.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yousells.common.constant.ErrorCodeConstants;
 import com.yousells.common.exception.BusinessException;
 import com.yousells.common.response.PageResponse;
+import com.yousells.modules.script.convert.ScriptConvert;
 import com.yousells.modules.script.dto.ScriptCreateRequest;
 import com.yousells.modules.script.dto.ScriptQueryRequest;
 import com.yousells.modules.script.dto.ScriptUpdateRequest;
+import com.yousells.modules.script.entity.ScriptCategoryEntity;
+import com.yousells.modules.script.entity.ScriptEntity;
+import com.yousells.modules.script.mapper.ScriptCategoryMapper;
+import com.yousells.modules.script.mapper.ScriptMapper;
 import com.yousells.modules.script.service.ScriptLibraryService;
 import com.yousells.modules.script.vo.ScriptCategoryVo;
 import com.yousells.modules.script.vo.ScriptVo;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class ScriptLibraryServiceImpl implements ScriptLibraryService {
 
-    private final List<ScriptCategoryVo> categories = List.of(
-            new ScriptCategoryVo(1L, "FIRST_ADD", "初次加好友", 1),
-            new ScriptCategoryVo(2L, "GROUP_INVITE", "邀请进群", 2),
-            new ScriptCategoryVo(3L, "HIGH_INTENT", "高意向推进", 3)
-    );
+    private final ScriptCategoryMapper scriptCategoryMapper;
+    private final ScriptMapper scriptMapper;
 
-    private final List<ScriptVo> scripts = List.of(
-            new ScriptVo(9001L, 1L, "初次加好友", "加好友开场 01", "刚加上好友的第一轮寒暄", "ENABLED", "你好，我是学长，这段时间在整理技术方向资料，看到你也对编程感兴趣，就想和你先认识一下。", LocalDateTime.of(2026, 5, 18, 12, 0)),
-            new ScriptVo(9002L, 2L, "邀请进群", "技术交流群邀请", "已经聊过 1-2 轮之后", "ENABLED", "我们这边在做一个小而精的技术交流群，平时会发项目路线、比赛信息和小活动，如果你愿意我拉你进去。", LocalDateTime.of(2026, 5, 18, 14, 0)),
-            new ScriptVo(9003L, 3L, "高意向推进", "体验路径推进", "高意向客户进一步沟通", "ENABLED", "如果你愿意，我可以先给你安排一个很轻量的体验路径，你先感受一下我们的教学风格和项目节奏。", LocalDateTime.of(2026, 5, 18, 16, 0))
-    );
+    public ScriptLibraryServiceImpl(ScriptCategoryMapper scriptCategoryMapper,
+                                    ScriptMapper scriptMapper) {
+        this.scriptCategoryMapper = scriptCategoryMapper;
+        this.scriptMapper = scriptMapper;
+    }
 
     @Override
     public List<ScriptCategoryVo> listCategories() {
-        return categories;
+        List<ScriptCategoryEntity> entities = scriptCategoryMapper.selectList(
+                new LambdaQueryWrapper<ScriptCategoryEntity>()
+                        .eq(ScriptCategoryEntity::getIsDeleted, 0)
+                        .orderByAsc(ScriptCategoryEntity::getSortOrder));
+        return entities.stream()
+                .map(e -> new ScriptCategoryVo(e.getId(), e.getCategoryCode(),
+                        e.getCategoryName(), e.getSortOrder()))
+                .toList();
     }
 
     @Override
     public PageResponse<ScriptVo> pageScripts(ScriptQueryRequest request) {
         int page = request.page() == null || request.page() < 1 ? 1 : request.page();
         int pageSize = request.pageSize() == null || request.pageSize() < 1 ? 20 : request.pageSize();
-        List<ScriptVo> filtered = scripts.stream()
-                .filter(script -> request.categoryId() == null || request.categoryId().equals(script.categoryId()))
-                .filter(script -> request.keyword() == null || request.keyword().isBlank()
-                        || script.title().contains(request.keyword())
-                        || script.content().contains(request.keyword()))
-                .toList();
-        int fromIndex = Math.min((page - 1) * pageSize, filtered.size());
-        int toIndex = Math.min(fromIndex + pageSize, filtered.size());
-        return PageResponse.of(filtered.subList(fromIndex, toIndex), page, pageSize, filtered.size());
+        IPage<ScriptVo> result = scriptMapper.selectPageWithCategory(
+                Page.of(page, pageSize), request.categoryId(), request.keyword());
+        return PageResponse.of(result.getRecords(), page, pageSize, result.getTotal());
     }
 
     @Override
     public ScriptVo getScript(Long id) {
-        return scripts.stream()
-                .filter(script -> script.id().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new BusinessException(ErrorCodeConstants.NOT_FOUND, "script not found"));
+        ScriptEntity entity = scriptMapper.selectById(id);
+        if (entity == null) {
+            throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "话术不存在");
+        }
+        ScriptCategoryEntity category = scriptCategoryMapper.selectById(entity.getCategoryId());
+        String categoryName = category != null ? category.getCategoryName() : "未知分类";
+        return new ScriptVo(
+                entity.getId(),
+                entity.getCategoryId(),
+                categoryName,
+                entity.getTitle(),
+                entity.getApplicableScene(),
+                entity.getStatus(),
+                entity.getContent(),
+                entity.getUpdatedAt()
+        );
     }
 
     @Override
     public Long createScript(ScriptCreateRequest request) {
-        return 9101L;
+        ScriptEntity entity = ScriptConvert.toEntity(request);
+        scriptMapper.insert(entity);
+        return entity.getId();
     }
 
     @Override
     public void updateScript(Long id, ScriptUpdateRequest request) {
-        getScript(id);
+        ScriptEntity entity = scriptMapper.selectById(id);
+        if (entity == null) {
+            throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "话术不存在");
+        }
+        ScriptConvert.applyUpdate(entity, request);
+        scriptMapper.updateById(entity);
     }
 }
