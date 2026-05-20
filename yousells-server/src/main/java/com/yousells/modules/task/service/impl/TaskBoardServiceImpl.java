@@ -1,59 +1,83 @@
 package com.yousells.modules.task.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yousells.common.constant.ErrorCodeConstants;
+import com.yousells.common.constant.TaskStatusConstants;
 import com.yousells.common.exception.BusinessException;
 import com.yousells.common.response.PageResponse;
+import com.yousells.modules.task.convert.TaskBoardConvert;
 import com.yousells.modules.task.dto.TaskCreateRequest;
 import com.yousells.modules.task.dto.TaskQueryRequest;
 import com.yousells.modules.task.dto.TaskUpdateRequest;
+import com.yousells.modules.task.entity.TaskBoardEntity;
+import com.yousells.modules.task.mapper.TaskBoardMapper;
 import com.yousells.modules.task.service.TaskBoardService;
 import com.yousells.modules.task.vo.TaskBoardColumnVo;
 import com.yousells.modules.task.vo.TaskBoardItemVo;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TaskBoardServiceImpl implements TaskBoardService {
 
-    private final List<TaskBoardItemVo> sampleTasks = List.of(
-            new TaskBoardItemVo(301L, "整理高意向客户回访清单", "CUSTOMER", "IN_PROGRESS", "HIGH", "秦梓源", "志明", LocalDateTime.of(2026, 5, 18, 20, 0), "今晚补齐名单"),
-            new TaskBoardItemVo(302L, "补齐日报模板字段说明", "REPORT", "TODO", "MEDIUM", "志明", null, LocalDateTime.of(2026, 5, 18, 22, 0), "写完后发群里确认"),
-            new TaskBoardItemVo(303L, "整理话术库首版分类", "SCRIPT", "DONE", "MEDIUM", "哲涛", "许润", LocalDateTime.of(2026, 5, 17, 18, 0), "已进入评审")
-    );
+    private static final Map<String, String> STATUS_TITLE_MAP = new LinkedHashMap<>();
+
+    static {
+        STATUS_TITLE_MAP.put(TaskStatusConstants.TODO, "待开始");
+        STATUS_TITLE_MAP.put(TaskStatusConstants.IN_PROGRESS, "进行中");
+        STATUS_TITLE_MAP.put(TaskStatusConstants.BLOCKED, "阻塞中");
+        STATUS_TITLE_MAP.put(TaskStatusConstants.DONE, "已完成");
+    }
+
+    private final TaskBoardMapper taskBoardMapper;
+
+    public TaskBoardServiceImpl(TaskBoardMapper taskBoardMapper) {
+        this.taskBoardMapper = taskBoardMapper;
+    }
 
     @Override
     public PageResponse<TaskBoardItemVo> pageTasks(TaskQueryRequest request) {
         int page = request.page() == null || request.page() < 1 ? 1 : request.page();
         int pageSize = request.pageSize() == null || request.pageSize() < 1 ? 20 : request.pageSize();
-        List<TaskBoardItemVo> filtered = sampleTasks.stream()
-                .filter(item -> request.status() == null || request.status().isBlank() || request.status().equals(item.status()))
-                .toList();
-        int fromIndex = Math.min((page - 1) * pageSize, filtered.size());
-        int toIndex = Math.min(fromIndex + pageSize, filtered.size());
-        return PageResponse.of(filtered.subList(fromIndex, toIndex), page, pageSize, filtered.size());
+        IPage<TaskBoardItemVo> result = taskBoardMapper.selectPageWithOwner(
+                Page.of(page, pageSize),
+                request.status()
+        );
+        return PageResponse.of(result.getRecords(), page, pageSize, result.getTotal());
     }
 
     @Override
     public List<TaskBoardColumnVo> listBoard() {
-        return List.of(
-                new TaskBoardColumnVo("TODO", "待开始", sampleTasks.stream().filter(item -> "TODO".equals(item.status())).toList()),
-                new TaskBoardColumnVo("IN_PROGRESS", "进行中", sampleTasks.stream().filter(item -> "IN_PROGRESS".equals(item.status())).toList()),
-                new TaskBoardColumnVo("DONE", "已完成", sampleTasks.stream().filter(item -> "DONE".equals(item.status())).toList())
-        );
+        List<TaskBoardItemVo> allTasks = taskBoardMapper.selectAllWithOwner();
+
+        return STATUS_TITLE_MAP.entrySet().stream()
+                .map(entry -> {
+                    List<TaskBoardItemVo> items = allTasks.stream()
+                            .filter(task -> entry.getKey().equals(task.status()))
+                            .toList();
+                    return new TaskBoardColumnVo(entry.getKey(), entry.getValue(), items);
+                })
+                .toList();
     }
 
     @Override
     public Long createTask(TaskCreateRequest request) {
-        return 9301L;
+        TaskBoardEntity entity = TaskBoardConvert.toEntity(request);
+        taskBoardMapper.insert(entity);
+        return entity.getId();
     }
 
     @Override
     public void updateTask(Long id, TaskUpdateRequest request) {
-        boolean exists = sampleTasks.stream().anyMatch(item -> item.id().equals(id));
-        if (!exists) {
+        TaskBoardEntity entity = taskBoardMapper.selectById(id);
+        if (entity == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "task not found");
         }
+        TaskBoardConvert.applyUpdate(entity, request);
+        taskBoardMapper.updateById(entity);
     }
 }

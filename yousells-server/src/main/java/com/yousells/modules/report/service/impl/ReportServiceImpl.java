@@ -1,54 +1,77 @@
 package com.yousells.modules.report.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yousells.common.constant.ErrorCodeConstants;
+import com.yousells.common.exception.BusinessException;
 import com.yousells.common.response.PageResponse;
+import com.yousells.common.security.SecurityUserContext;
+import com.yousells.modules.report.convert.ReportConvert;
 import com.yousells.modules.report.dto.DailyReportCreateRequest;
 import com.yousells.modules.report.dto.WeeklyReportCreateRequest;
+import com.yousells.modules.report.entity.DailyReportEntity;
+import com.yousells.modules.report.entity.WeeklyReportEntity;
+import com.yousells.modules.report.mapper.DailyReportMapper;
+import com.yousells.modules.report.mapper.WeeklyReportMapper;
 import com.yousells.modules.report.service.ReportService;
 import com.yousells.modules.report.vo.DailyReportVo;
 import com.yousells.modules.report.vo.WeeklyReportVo;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Service
 public class ReportServiceImpl implements ReportService {
 
-    private final List<DailyReportVo> sampleDailyReports = List.of(
-            new DailyReportVo(7001L, LocalDate.of(2026, 5, 18), "秦梓源", "完成 P0 骨架落地", "联调环境还没拉起", "继续补测试与部署说明"),
-            new DailyReportVo(7002L, LocalDate.of(2026, 5, 18), "志明", "整理客户回访数据", "客户标签口径待统一", "明天开始对接客户模块")
-    );
+    private final DailyReportMapper dailyReportMapper;
+    private final WeeklyReportMapper weeklyReportMapper;
 
-    private final List<WeeklyReportVo> sampleWeeklyReports = List.of(
-            new WeeklyReportVo(7101L, "2026-W21", "秦梓源", "确定技术选型并建立仓库", "前端环境未安装依赖", "推进基础设施与联调基线"),
-            new WeeklyReportVo(7102L, "2026-W21", "哲涛", "补齐业务流程资料", "日报字段定义待确认", "进入任务模块开发")
-    );
+    public ReportServiceImpl(DailyReportMapper dailyReportMapper,
+                              WeeklyReportMapper weeklyReportMapper) {
+        this.dailyReportMapper = dailyReportMapper;
+        this.weeklyReportMapper = weeklyReportMapper;
+    }
 
     @Override
     public PageResponse<DailyReportVo> pageDailyReports(int page, int pageSize) {
-        return slice(sampleDailyReports, page, pageSize);
+        int safePage = page < 1 ? 1 : page;
+        int safePageSize = pageSize < 1 ? 20 : pageSize;
+        IPage<DailyReportVo> result = dailyReportMapper.selectPageWithUser(
+                Page.of(safePage, safePageSize));
+        return PageResponse.of(result.getRecords(), safePage, safePageSize, result.getTotal());
     }
 
     @Override
     public Long createDailyReport(DailyReportCreateRequest request) {
-        return 7201L;
+        Long userId = SecurityUserContext.requireCurrentUser().userId();
+        DailyReportEntity entity = ReportConvert.toDailyEntity(request, userId);
+        try {
+            dailyReportMapper.insert(entity);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(ErrorCodeConstants.STATUS_CONFLICT,
+                    "该日期已有日报记录，请勿重复提交");
+        }
+        return entity.getId();
     }
 
     @Override
     public PageResponse<WeeklyReportVo> pageWeeklyReports(int page, int pageSize) {
-        return slice(sampleWeeklyReports, page, pageSize);
+        int safePage = page < 1 ? 1 : page;
+        int safePageSize = pageSize < 1 ? 20 : pageSize;
+        IPage<WeeklyReportVo> result = weeklyReportMapper.selectPageWithUser(
+                Page.of(safePage, safePageSize));
+        return PageResponse.of(result.getRecords(), safePage, safePageSize, result.getTotal());
     }
 
     @Override
     public Long createWeeklyReport(WeeklyReportCreateRequest request) {
-        return 7301L;
-    }
-
-    private <T> PageResponse<T> slice(List<T> data, int page, int pageSize) {
-        int safePage = page < 1 ? 1 : page;
-        int safePageSize = pageSize < 1 ? 20 : pageSize;
-        int fromIndex = Math.min((safePage - 1) * safePageSize, data.size());
-        int toIndex = Math.min(fromIndex + safePageSize, data.size());
-        return PageResponse.of(data.subList(fromIndex, toIndex), safePage, safePageSize, data.size());
+        Long userId = SecurityUserContext.requireCurrentUser().userId();
+        WeeklyReportEntity entity = ReportConvert.toWeeklyEntity(request, userId);
+        try {
+            weeklyReportMapper.insert(entity);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(ErrorCodeConstants.STATUS_CONFLICT,
+                    "该周已有周报记录，请勿重复提交");
+        }
+        return entity.getId();
     }
 }

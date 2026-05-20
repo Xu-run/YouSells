@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yousells.modules.task.mapper.TaskBoardMapper">
+
+    <resultMap id="TaskBoardItemVoMap" type="com.yousells.modules.task.vo.TaskBoardItemVo">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="task_title" javaType="java.lang.String"/>
+            <arg column="task_type" javaType="java.lang.String"/>
+            <arg column="status" javaType="java.lang.String"/>
+            <arg column="priority" javaType="java.lang.String"/>
+            <arg column="owner_name" javaType="java.lang.String"/>
+            <arg column="assistant_name" javaType="java.lang.String"/>
+            <arg column="due_at" javaType="java.time.LocalDateTime"/>
+            <arg column="next_action" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="selectWithOwner">
+        SELECT t.id,
+               t.task_title,
+               t.task_type,
+               t.status,
+               t.priority,
+               u1.display_name AS owner_name,
+               u2.display_name AS assistant_name,
+               t.due_at,
+               t.next_action
+        FROM task_boards t
+        LEFT JOIN users u1 ON t.owner_user_id = u1.id
+        LEFT JOIN users u2 ON t.assistant_user_id = u2.id
+        WHERE t.is_deleted = 0
+    </sql>
+
+    <select id="selectPageWithOwner" resultMap="TaskBoardItemVoMap">
+        <include refid="selectWithOwner"/>
+        <if test="status != null and status != ''">
+            AND t.status = #{status}
+        </if>
+        ORDER BY t.due_at ASC, t.id DESC
+    </select>
+
+    <select id="selectAllWithOwner" resultMap="TaskBoardItemVoMap">
+        <include refid="selectWithOwner"/>
+        ORDER BY t.due_at ASC, t.id DESC
+    </select>
+
+</mapper>

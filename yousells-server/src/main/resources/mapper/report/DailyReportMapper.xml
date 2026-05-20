@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yousells.modules.report.mapper.DailyReportMapper">
+
+    <resultMap id="DailyReportVoMap" type="com.yousells.modules.report.vo.DailyReportVo">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="report_date" javaType="java.time.LocalDate"/>
+            <arg column="user_name" javaType="java.lang.String"/>
+            <arg column="today_work" javaType="java.lang.String"/>
+            <arg column="issues" javaType="java.lang.String"/>
+            <arg column="tomorrow_plan" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="selectPageWithUser" resultMap="DailyReportVoMap">
+        SELECT d.id,
+               d.report_date,
+               u.display_name AS user_name,
+               d.today_work,
+               d.issues,
+               d.tomorrow_plan
+        FROM daily_reports d
+        LEFT JOIN users u ON d.user_id = u.id
+        WHERE d.is_deleted = 0
+        ORDER BY d.report_date DESC, d.id DESC
+    </select>
+
+</mapper>
