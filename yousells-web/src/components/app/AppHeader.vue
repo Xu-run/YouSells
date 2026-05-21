@@ -7,7 +7,7 @@ import { useAuthStore } from "@/stores/auth";
 const authStore = useAuthStore();
 const router = useRouter();
 
-const userLabel = computed(() => authStore.currentUser?.displayName ?? "未登录");
+const userLabel = computed(() => authStore.currentUser?.realName ?? "未登录");
 
 async function handleLogout() {
   await authStore.logoutAction();
@@ -25,7 +25,7 @@ async function handleLogout() {
     <div class="app-header__actions">
       <div class="app-user-chip">
         <span class="app-user-chip__name">{{ userLabel }}</span>
-        <span class="app-user-chip__role">{{ authStore.currentUser?.roles?.join(" / ") ?? "游客" }}</span>
+        <span class="app-user-chip__role">{{ authStore.currentUser?.level ?? "游客" }}</span>
       </div>
       <el-button type="primary" plain @click="handleLogout">退出登录</el-button>
     </div>

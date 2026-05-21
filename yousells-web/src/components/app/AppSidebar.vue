@@ -13,7 +13,7 @@ const items: NavItem[] = [
   { name: RouteName.CustomerList, label: "客户管理", icon: User },
   { name: RouteName.TaskBoard, label: "公共安排", icon: List },
   { name: RouteName.DailyReport, label: "日报周报", icon: Document },
-  { name: RouteName.ScriptLibrary, label: "话术库", icon: ChatLineSquare }
+  { name: RouteName.TopicList, label: "攻略区", icon: ChatLineSquare }
 ];
 </script>
 

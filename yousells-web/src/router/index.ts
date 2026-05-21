@@ -53,9 +53,14 @@ const router = createRouter({
           component: () => import("@/views/report/WeeklyReportView.vue")
         },
         {
-          path: "scripts",
-          name: RouteName.ScriptLibrary,
-          component: () => import("@/views/script/ScriptLibraryView.vue")
+          path: "topics",
+          name: RouteName.TopicList,
+          component: () => import("@/views/topic/TopicListView.vue")
+        },
+        {
+          path: "topics/:id",
+          name: RouteName.TopicDetail,
+          component: () => import("@/views/topic/TopicDetailView.vue")
         }
       ]
     }

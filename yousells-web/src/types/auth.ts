@@ -1,8 +1,9 @@
 export interface CurrentUser {
   userId: number;
   username: string;
-  displayName: string;
-  roles: string[];
+  realName: string;
+  level: string;
+  managerUserId: number | null;
 }
 
 export interface LoginResult {

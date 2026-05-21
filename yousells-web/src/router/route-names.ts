@@ -6,7 +6,8 @@ export const RouteName = {
   TaskBoard: "task-board",
   DailyReport: "daily-report",
   WeeklyReport: "weekly-report",
-  ScriptLibrary: "script-library"
+  TopicList: "topic-list",
+  TopicDetail: "topic-detail"
 } as const;
 
 export type RouteNameValue = (typeof RouteName)[keyof typeof RouteName];
