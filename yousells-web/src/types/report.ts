@@ -1,8 +1,11 @@
 export interface DailyReport {
   id: number;
   reportDate: string;
-  userDisplayName: string;
-  todayWork: string;
+  newCustomerCount: number;
+  followUpCount: number;
+  progressAdvanceCount: number;
+  taskCompletedCount: number;
+  summary: string;
   issues: string | null;
   tomorrowPlan: string;
 }
@@ -10,22 +13,28 @@ export interface DailyReport {
 export interface WeeklyReport {
   id: number;
   weekKey: string;
-  userDisplayName: string;
-  weeklySummary: string;
+  weekStart: string;
+  weekEnd: string;
+  newCustomerCount: number;
+  followUpCount: number;
+  progressAdvanceCount: number;
+  convertedCount: number;
+  taskCompletedCount: number;
+  summary: string;
   issues: string | null;
   nextWeekPlan: string;
 }
 
 export interface DailyReportCreateRequest {
   reportDate: string;
-  todayWork: string;
+  summary: string;
   issues?: string | null;
   tomorrowPlan: string;
 }
 
 export interface WeeklyReportCreateRequest {
   weekKey: string;
-  weeklySummary: string;
+  summary: string;
   issues?: string | null;
   nextWeekPlan: string;
 }

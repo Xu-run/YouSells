@@ -32,14 +32,13 @@ const emit = defineEmits<{
             {{ reportType === "daily" ? (item as DailyReport).reportDate : (item as WeeklyReport).weekKey }}
           </span>
           <span class="history-item__user">
-            {{ item.userDisplayName }}
           </span>
         </div>
         <div class="history-item__body">
           <template v-if="reportType === 'daily'">
             <div class="history-item__field">
-              <span class="history-item__field-label">今日工作：</span>
-              {{ (item as DailyReport).todayWork }}
+              <span class="history-item__field-label">今日小结：</span>
+              {{ (item as DailyReport).summary }}
             </div>
             <div class="history-item__field" v-if="(item as DailyReport).issues">
               <span class="history-item__field-label">问题：</span>
@@ -52,8 +51,8 @@ const emit = defineEmits<{
           </template>
           <template v-else>
             <div class="history-item__field">
-              <span class="history-item__field-label">本周总结：</span>
-              {{ (item as WeeklyReport).weeklySummary }}
+              <span class="history-item__field-label">本周小结：</span>
+              {{ (item as WeeklyReport).summary }}
             </div>
             <div class="history-item__field" v-if="(item as WeeklyReport).issues">
               <span class="history-item__field-label">问题：</span>

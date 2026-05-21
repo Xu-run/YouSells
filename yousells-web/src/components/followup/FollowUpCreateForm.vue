@@ -17,29 +17,25 @@ const visible = ref(false);
 
 const form = reactive<FollowUpCreateRequest>({
   customerId: props.customerId,
-  followType: "",
-  communicatedContent: "",
-  customerFeedback: null,
-  currentConcern: null,
-  nextAction: null,
-  nextFollowAt: null
+  progress: "",
+  content: "",
+  feedback: null,
+  nextAction: null
 });
 
 const formRef = ref();
 
 const rules = {
-  followType: [{ required: true, message: "请选择跟进方式", trigger: "change" }],
-  communicatedContent: [{ required: true, message: "请填写沟通内容", trigger: "blur" }]
+  progress: [{ required: true, message: "请选择当前进度", trigger: "change" }],
+  content: [{ required: true, message: "请填写沟通内容", trigger: "blur" }]
 };
 
 function open() {
   form.customerId = props.customerId;
-  form.followType = "";
-  form.communicatedContent = "";
-  form.customerFeedback = null;
-  form.currentConcern = null;
+  form.progress = "";
+  form.content = "";
+  form.feedback = null;
   form.nextAction = null;
-  form.nextFollowAt = null;
   visible.value = true;
 }
 
@@ -74,7 +70,7 @@ defineExpose({ open });
     <el-dialog
       v-model="visible"
       title="新增跟进记录"
-      width="560px"
+      width="500px"
       :close-on-click-modal="false"
       @closed="close"
     >
@@ -82,41 +78,32 @@ defineExpose({ open });
         ref="formRef"
         :model="form"
         :rules="rules"
-        label-width="90px"
+        label-width="80px"
         label-position="top"
       >
-        <el-form-item label="跟进方式" prop="followType">
-          <el-select v-model="form.followType" placeholder="选择跟进方式" style="width: 100%">
-            <el-option label="电话" value="电话" />
-            <el-option label="微信" value="微信" />
-            <el-option label="面谈" value="面谈" />
-            <el-option label="邮件" value="邮件" />
-            <el-option label="其他" value="其他" />
+        <el-form-item label="当前进度" prop="progress">
+          <el-select v-model="form.progress" placeholder="选择本次沟通时的进度" style="width: 100%">
+            <el-option label="职规" value="职规" />
+            <el-option label="技术栈" value="技术栈" />
+            <el-option label="课程" value="课程" />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="沟通内容" prop="communicatedContent">
+        <el-form-item label="沟通内容" prop="content">
           <el-input
-            v-model="form.communicatedContent"
+            v-model="form.content"
             type="textarea"
             :rows="3"
             placeholder="记录本次沟通的核心内容"
           />
         </el-form-item>
 
-        <el-form-item label="客户反馈">
+        <el-form-item label="学生反馈">
           <el-input
-            v-model="form.customerFeedback"
+            v-model="form.feedback"
             type="textarea"
             :rows="2"
-            placeholder="客户说了什么、态度如何"
-          />
-        </el-form-item>
-
-        <el-form-item label="当前顾虑">
-          <el-input
-            v-model="form.currentConcern"
-            placeholder="客户当前的顾虑点"
+            placeholder="学生说了什么、态度如何"
           />
         </el-form-item>
 
@@ -124,17 +111,6 @@ defineExpose({ open });
           <el-input
             v-model="form.nextAction"
             placeholder="下一步计划做什么"
-          />
-        </el-form-item>
-
-        <el-form-item label="计划跟进时间">
-          <el-date-picker
-            v-model="form.nextFollowAt"
-            type="datetime"
-            placeholder="选择时间"
-            style="width: 100%"
-            format="YYYY-MM-DD HH:mm"
-            value-format="YYYY-MM-DDTHH:mm:ss"
           />
         </el-form-item>
       </el-form>

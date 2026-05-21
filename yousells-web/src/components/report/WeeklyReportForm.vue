@@ -13,14 +13,14 @@ const formRef = ref();
 
 const form = reactive<WeeklyReportCreateRequest>({
   weekKey: "",
-  weeklySummary: "",
+  summary: "",
   issues: null,
   nextWeekPlan: ""
 });
 
 const rules = {
   weekKey: [{ required: true, message: "请填写周标识", trigger: "blur" }],
-  weeklySummary: [{ required: true, message: "请填写本周总结", trigger: "blur" }],
+  summary: [{ required: true, message: "请填写本周工作总结", trigger: "blur" }],
   nextWeekPlan: [{ required: true, message: "请填写下周计划", trigger: "blur" }]
 };
 
@@ -32,12 +32,12 @@ async function submit() {
   try {
     await createWeeklyReport({
       weekKey: form.weekKey,
-      weeklySummary: form.weeklySummary,
+      summary: form.summary,
       issues: form.issues || null,
       nextWeekPlan: form.nextWeekPlan
     });
     form.weekKey = "";
-    form.weeklySummary = "";
+    form.summary = "";
     form.issues = null;
     form.nextWeekPlan = "";
     emit("submitted");
@@ -76,9 +76,9 @@ function currentWeekKey(): string {
         />
       </el-form-item>
 
-      <el-form-item label="本周总结" prop="weeklySummary">
+      <el-form-item label="本周总结" prop="summary">
         <el-input
-          v-model="form.weeklySummary"
+          v-model="form.summary"
           type="textarea"
           :rows="3"
           placeholder="本周完成了哪些重点工作"

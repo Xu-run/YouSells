@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from "vue";
 import { ElMessage } from "element-plus";
-import type { TaskBoardItem, TaskCreateRequest, TaskUpdateRequest } from "@/types/task";
+import type { TaskBoardItem, TaskCreateRequest } from "@/types/task";
 import { createTask, updateTask } from "@/api/task";
 
 const props = defineProps<{
@@ -18,16 +18,14 @@ const isEdit = ref(false);
 const submitting = ref(false);
 const formRef = ref();
 
-const form = reactive<TaskCreateRequest & { status?: string; taskDescription?: string | null; nextAction?: string | null }>({
+const form = reactive({
   taskTitle: "",
-  taskType: null,
-  taskDescription: null,
-  priority: "",
+  direction: "自己规划",
+  taskDescription: "" as string | null,
+  priority: "中",
   ownerUserId: 1,
-  assistantUserId: null,
-  dueAt: null,
-  status: "待开始",
-  nextAction: null
+  dueAt: null as string | null,
+  status: "待开始"
 });
 
 const rules = {
@@ -42,25 +40,21 @@ watch(
       if (t) {
         isEdit.value = true;
         form.taskTitle = t.taskTitle;
-        form.taskType = t.taskType;
-        form.priority = t.priority;
+        form.direction = t.direction || "自己规划";
+        form.priority = t.priority || "中";
         form.ownerUserId = 1;
-        form.assistantUserId = null;
         form.dueAt = t.dueAt;
         form.status = t.status;
         form.taskDescription = null;
-        form.nextAction = t.nextAction;
       } else {
         isEdit.value = false;
         form.taskTitle = "";
-        form.taskType = null;
-        form.priority = "";
+        form.direction = "自己规划";
+        form.priority = "中";
         form.ownerUserId = 1;
-        form.assistantUserId = null;
         form.dueAt = null;
         form.status = "待开始";
         form.taskDescription = null;
-        form.nextAction = null;
       }
     }
   }
@@ -75,25 +69,22 @@ async function submit() {
     if (isEdit.value && props.task) {
       await updateTask(props.task.id, {
         taskTitle: form.taskTitle,
-        status: form.status || "待开始",
+        status: form.status,
         taskDescription: form.taskDescription,
-        priority: form.priority || undefined,
+        priority: form.priority,
         ownerUserId: form.ownerUserId,
-        assistantUserId: form.assistantUserId,
-        dueAt: form.dueAt,
-        nextAction: form.nextAction
-      } as TaskUpdateRequest);
+        dueAt: form.dueAt
+      });
       ElMessage.success("任务已更新");
     } else {
       await createTask({
         taskTitle: form.taskTitle,
-        taskType: form.taskType,
+        direction: form.direction,
         taskDescription: form.taskDescription,
-        priority: form.priority || undefined,
+        priority: form.priority,
         ownerUserId: form.ownerUserId,
-        assistantUserId: form.assistantUserId,
         dueAt: form.dueAt
-      } as TaskCreateRequest);
+      });
       ElMessage.success("任务已创建");
     }
     emit("saved");
@@ -110,7 +101,7 @@ async function submit() {
   <el-dialog
     :model-value="visible"
     :title="isEdit ? '编辑任务' : '新增任务'"
-    width="520px"
+    width="500px"
     :close-on-click-modal="false"
     @update:model-value="emit('close')"
   >
@@ -125,23 +116,29 @@ async function submit() {
         <el-input v-model="form.taskTitle" placeholder="输入任务标题" />
       </el-form-item>
 
+      <el-form-item label="任务方向" v-if="!isEdit">
+        <el-select v-model="form.direction" style="width: 100%">
+          <el-option label="向下派发" value="向下派发" />
+          <el-option label="自己规划" value="自己规划" />
+          <el-option label="向上建议" value="向上建议" />
+        </el-select>
+      </el-form-item>
+
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="任务类型">
-            <el-select v-model="form.taskType" placeholder="选择" style="width: 100%" clearable>
-              <el-option label="客户跟进" value="客户跟进" />
-              <el-option label="内部事务" value="内部事务" />
-              <el-option label="会议安排" value="会议安排" />
-              <el-option label="其他" value="其他" />
+          <el-form-item label="优先级">
+            <el-select v-model="form.priority" style="width: 100%">
+              <el-option label="高" value="高" />
+              <el-option label="中" value="中" />
+              <el-option label="低" value="低" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="优先级">
-            <el-select v-model="form.priority" placeholder="选择" style="width: 100%" clearable>
-              <el-option label="高" value="高" />
-              <el-option label="中" value="中" />
-              <el-option label="低" value="低" />
+          <el-form-item label="负责人">
+            <el-select v-model="form.ownerUserId" style="width: 100%">
+              <el-option label="秦梓源" :value="1" />
+              <el-option label="小赵" :value="2" />
             </el-select>
           </el-form-item>
         </el-col>
@@ -172,20 +169,6 @@ async function submit() {
           <el-option label="待开始" value="待开始" />
           <el-option label="进行中" value="进行中" />
           <el-option label="已完成" value="已完成" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item v-if="isEdit" label="下一步动作">
-        <el-input v-model="form.nextAction" placeholder="下一步计划" />
-      </el-form-item>
-
-      <el-form-item label="负责人" prop="ownerUserId">
-        <el-select v-model="form.ownerUserId" style="width: 100%">
-          <el-option label="秦梓源" :value="1" />
-          <el-option label="志明" :value="2" />
-          <el-option label="哲涛" :value="3" />
-          <el-option label="嘉诚" :value="4" />
-          <el-option label="许润" :value="5" />
         </el-select>
       </el-form-item>
     </el-form>

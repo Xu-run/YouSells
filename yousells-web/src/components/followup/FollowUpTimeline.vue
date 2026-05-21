@@ -1,21 +1,11 @@
 <script setup lang="ts">
 import type { FollowUpRecord } from "@/types/followup";
+import { datetime } from "@/utils/format";
 
 defineProps<{
   followUps: FollowUpRecord[];
   loading: boolean;
 }>();
-
-function followTypeTag(type: string): "" | "success" | "warning" | "info" | "danger" {
-  const map: Record<string, "" | "success" | "warning" | "info" | "danger"> = {
-    "电话": "success",
-    "微信": "info",
-    "面谈": "warning",
-    "邮件": "",
-    "其他": "info"
-  };
-  return map[type] || "";
-}
 </script>
 
 <template>
@@ -27,36 +17,26 @@ function followTypeTag(type: string): "" | "success" | "warning" | "info" | "dan
       <el-timeline-item
         v-for="item in followUps"
         :key="item.id"
-        :timestamp="item.createdAt"
+        :timestamp="datetime(item.createdAt)"
         placement="top"
       >
         <div class="timeline-item-card">
           <div class="timeline-item-card__header">
-            <el-tag size="small" :type="followTypeTag(item.followType)">
-              {{ item.followType }}
-            </el-tag>
-            <span class="timeline-item-card__operator">{{ item.operatorDisplayName }}</span>
+            <el-tag size="small" effect="plain">{{ item.progress }}</el-tag>
+            <span class="timeline-item-card__operator">{{ item.userRealName }}</span>
           </div>
           <div class="timeline-item-card__body">
             <div class="timeline-item-row">
               <span class="timeline-item-row__label">沟通内容</span>
-              <span class="timeline-item-row__value">{{ item.communicatedContent }}</span>
+              <span class="timeline-item-row__value">{{ item.content }}</span>
             </div>
-            <div class="timeline-item-row" v-if="item.customerFeedback">
-              <span class="timeline-item-row__label">客户反馈</span>
-              <span class="timeline-item-row__value">{{ item.customerFeedback }}</span>
-            </div>
-            <div class="timeline-item-row" v-if="item.currentConcern">
-              <span class="timeline-item-row__label">当前顾虑</span>
-              <span class="timeline-item-row__value">{{ item.currentConcern }}</span>
+            <div class="timeline-item-row" v-if="item.feedback">
+              <span class="timeline-item-row__label">学生反馈</span>
+              <span class="timeline-item-row__value">{{ item.feedback }}</span>
             </div>
             <div class="timeline-item-row" v-if="item.nextAction">
               <span class="timeline-item-row__label">下一步</span>
               <span class="timeline-item-row__value">{{ item.nextAction }}</span>
-            </div>
-            <div class="timeline-item-row" v-if="item.nextFollowAt">
-              <span class="timeline-item-row__label">计划再跟</span>
-              <span class="timeline-item-row__value">{{ item.nextFollowAt }}</span>
             </div>
           </div>
         </div>

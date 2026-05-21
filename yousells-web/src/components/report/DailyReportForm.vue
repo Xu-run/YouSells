@@ -13,14 +13,14 @@ const formRef = ref();
 
 const form = reactive<DailyReportCreateRequest>({
   reportDate: new Date().toISOString().slice(0, 10),
-  todayWork: "",
+  summary: "",
   issues: null,
   tomorrowPlan: ""
 });
 
 const rules = {
   reportDate: [{ required: true, message: "请选择日期", trigger: "change" }],
-  todayWork: [{ required: true, message: "请填写今日完成工作", trigger: "blur" }],
+  summary: [{ required: true, message: "请填写今日工作小结", trigger: "blur" }],
   tomorrowPlan: [{ required: true, message: "请填写明日计划", trigger: "blur" }]
 };
 
@@ -32,11 +32,11 @@ async function submit() {
   try {
     await createDailyReport({
       reportDate: form.reportDate,
-      todayWork: form.todayWork,
+      summary: form.summary,
       issues: form.issues || null,
       tomorrowPlan: form.tomorrowPlan
     });
-    form.todayWork = "";
+    form.summary = "";
     form.issues = null;
     form.tomorrowPlan = "";
     emit("submitted");
@@ -69,9 +69,9 @@ async function submit() {
         />
       </el-form-item>
 
-      <el-form-item label="今日完成工作" prop="todayWork">
+      <el-form-item label="今日小结" prop="summary">
         <el-input
-          v-model="form.todayWork"
+          v-model="form.summary"
           type="textarea"
           :rows="3"
           placeholder="今天完成了哪些工作"

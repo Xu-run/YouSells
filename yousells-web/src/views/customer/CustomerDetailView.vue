@@ -77,7 +77,7 @@ onMounted(() => {
           />
 
           <CustomerNextActionCard
-            :detail="detail"
+            :follow-ups="followUps"
             :loading="loading"
             @updated="onDetailUpdated"
           />
