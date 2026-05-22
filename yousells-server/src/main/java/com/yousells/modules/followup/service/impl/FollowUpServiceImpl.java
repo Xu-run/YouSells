@@ -17,12 +17,10 @@ import com.yousells.modules.followup.service.FollowUpService;
 import com.yousells.modules.followup.vo.FollowUpVo;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class FollowUpServiceImpl implements FollowUpService {
@@ -52,8 +50,7 @@ public class FollowUpServiceImpl implements FollowUpService {
 
         List<FollowUpVo> list = entities.stream()
                 .map(e -> FollowUpConvert.toVo(e,
-                        displayNameMap.getOrDefault(e.getOperatorUserId(), ""),
-                        displayNameMap.getOrDefault(e.getOwnerUserId(), "")))
+                        displayNameMap.getOrDefault(e.getUserId(), "")))
                 .toList();
 
         return PageResponse.of(list, result.getCurrent(), result.getSize(), result.getTotal());
@@ -66,32 +63,17 @@ public class FollowUpServiceImpl implements FollowUpService {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "customer not found");
         }
 
-        Long operatorUserId = SecurityUserContext.requireCurrentUser().userId();
+        Long userId = SecurityUserContext.requireCurrentUser().userId();
 
-        FollowUpEntity entity = FollowUpConvert.toEntity(request);
-        entity.setOperatorUserId(operatorUserId);
-        entity.setOwnerUserId(customer.getOwnerUserId());
+        FollowUpEntity entity = FollowUpConvert.toEntity(request, userId);
         followUpMapper.insert(entity);
-
-        customer.setLastContactAt(LocalDateTime.now());
-        customer.setLatestFeedback(request.communicatedContent());
-        if (request.nextAction() != null) {
-            customer.setNextFollowAction(request.nextAction());
-        }
-        if (request.nextFollowAt() != null) {
-            customer.setNextFollowAt(request.nextFollowAt());
-        }
-        if (request.currentConcern() != null) {
-            customer.setCurrentConcern(request.currentConcern());
-        }
-        customerMapper.updateById(customer);
 
         return entity.getId();
     }
 
     private Map<Long, String> buildDisplayNameMap(List<FollowUpEntity> entities) {
         Set<Long> userIds = entities.stream()
-                .flatMap(e -> Stream.of(e.getOperatorUserId(), e.getOwnerUserId()))
+                .map(FollowUpEntity::getUserId)
                 .collect(Collectors.toSet());
         if (userIds.isEmpty()) {
             return Map.of();

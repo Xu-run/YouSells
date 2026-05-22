@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yousells.modules.topic.mapper.TopicMapper">
+
+    <resultMap id="topicMap" type="com.yousells.modules.topic.entity.TopicEntity">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="category" column="category"/>
+        <result property="authorUserId" column="author_user_id"/>
+        <result property="solved" column="solved"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="isDeleted" column="is_deleted"/>
+    </resultMap>
+
+    <select id="pageTopics" resultMap="topicMap">
+        SELECT t.*
+        FROM topics t
+        WHERE t.is_deleted = 0
+        <if test="category != null and category != ''">
+            AND t.category = #{category}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND t.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY t.updated_at DESC
+    </select>
+
+</mapper>

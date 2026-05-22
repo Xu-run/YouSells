@@ -1,12 +1,12 @@
 package com.yousells.modules.customer.dto;
 
 public record CustomerQueryRequest(
-        Integer page,
-        Integer pageSize,
         String keyword,
-        String intentLevel,
-        String currentStage,
+        String grade,
+        String major,
+        String progress,
+        String intent,
         Long ownerUserId,
-        String sourcePlatform
-) {
-}
+        Integer page,
+        Integer pageSize
+) {}
