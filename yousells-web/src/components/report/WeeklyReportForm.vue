@@ -4,6 +4,10 @@ import { ElMessage } from "element-plus";
 import type { WeeklyReportCreateRequest } from "@/types/report";
 import { createWeeklyReport } from "@/api/report";
 
+const props = defineProps<{
+  weekKey?: string;
+}>();
+
 const emit = defineEmits<{
   submitted: [];
 }>();
@@ -12,7 +16,7 @@ const submitting = ref(false);
 const formRef = ref();
 
 const form = reactive<WeeklyReportCreateRequest>({
-  weekKey: "",
+  weekKey: props.weekKey || currentWeekKey(),
   summary: "",
   issues: null,
   nextWeekPlan: ""
