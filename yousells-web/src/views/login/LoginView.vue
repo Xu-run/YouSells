@@ -42,7 +42,7 @@ async function handleSubmit() {
       <section class="login-panel__brand">
         <h1 class="login-panel__title">YouSells</h1>
         <p class="login-panel__desc">
-          面向团队内部的客户管理与协作平台。P0 阶段先打通登录、看板、客户、跟进、公共安排、日报周报和话术库。
+          面向团队内部的学生客户管理与协作平台。统一客户沉淀、跟进记录、公共安排、日报周报，让团队协作更高效。
         </p>
         <ul class="login-panel__list">
           <li>统一客户口径与跟进节奏</li>
@@ -54,7 +54,7 @@ async function handleSubmit() {
       <section class="login-panel__form">
         <div class="login-form__header">
           <h1>进入项目工作台</h1>
-          <p>YouSells 团队工作台，P0 阶段先行接入核心业务主流程。</p>
+          <p>YouSells 团队工作台，登录后即可访问客户管理、公共安排、日报周报与攻略区。</p>
         </div>
 
         <el-form ref="formRef" class="login-form" label-position="top" :model="form" :rules="rules" @submit.prevent="handleSubmit">

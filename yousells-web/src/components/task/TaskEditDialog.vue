@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, onMounted, computed } from "vue";
 import { ElMessage } from "element-plus";
+import { useAuthStore } from "@/stores/auth";
+import { useUserStore } from "@/stores/user";
 import type { TaskBoardItem, TaskCreateRequest } from "@/types/task";
 import { createTask, updateTask } from "@/api/task";
 
@@ -14,9 +16,19 @@ const emit = defineEmits<{
   saved: [];
 }>();
 
+const authStore = useAuthStore();
+const userStore = useUserStore();
 const isEdit = ref(false);
 const submitting = ref(false);
 const formRef = ref();
+
+const canEdit = computed(() => {
+  if (!isEdit.value) return true; // creating new task
+  const currentUserId = authStore.currentUser?.userId;
+  const isOwner = props.task?.ownerUserId === currentUserId;
+  const isT3 = authStore.currentUser?.level === "T3";
+  return isOwner || isT3;
+});
 
 const form = reactive({
   taskTitle: "",
@@ -33,6 +45,10 @@ const rules = {
   ownerUserId: [{ required: true, message: "请选择负责人", trigger: "change" }]
 };
 
+onMounted(() => {
+  void userStore.loadUsers();
+});
+
 watch(
   () => [props.visible, props.task] as const,
   ([v, t]) => {
@@ -42,7 +58,7 @@ watch(
         form.taskTitle = t.taskTitle;
         form.direction = t.direction || "自己规划";
         form.priority = t.priority || "中";
-        form.ownerUserId = 1;
+        form.ownerUserId = t.ownerUserId ?? 1;
         form.dueAt = t.dueAt;
         form.status = t.status;
         form.taskDescription = null;
@@ -113,7 +129,7 @@ async function submit() {
       label-position="top"
     >
       <el-form-item label="任务标题" prop="taskTitle">
-        <el-input v-model="form.taskTitle" placeholder="输入任务标题" />
+        <el-input v-model="form.taskTitle" placeholder="输入任务标题" :disabled="isEdit && !canEdit" />
       </el-form-item>
 
       <el-form-item label="任务方向" v-if="!isEdit">
@@ -127,7 +143,7 @@ async function submit() {
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="优先级">
-            <el-select v-model="form.priority" style="width: 100%">
+            <el-select v-model="form.priority" style="width: 100%" :disabled="isEdit && !canEdit">
               <el-option label="高" value="高" />
               <el-option label="中" value="中" />
               <el-option label="低" value="低" />
@@ -136,9 +152,13 @@ async function submit() {
         </el-col>
         <el-col :span="12">
           <el-form-item label="负责人">
-            <el-select v-model="form.ownerUserId" style="width: 100%">
-              <el-option label="秦梓源" :value="1" />
-              <el-option label="小赵" :value="2" />
+            <el-select v-model="form.ownerUserId" style="width: 100%" :disabled="isEdit && !canEdit">
+              <el-option
+                v-for="opt in userStore.userOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -150,6 +170,7 @@ async function submit() {
           type="textarea"
           :rows="2"
           placeholder="描述任务详情"
+          :disabled="isEdit && !canEdit"
         />
       </el-form-item>
 
@@ -161,11 +182,12 @@ async function submit() {
           style="width: 100%"
           format="YYYY-MM-DD HH:mm"
           value-format="YYYY-MM-DDTHH:mm:ss"
+          :disabled="isEdit && !canEdit"
         />
       </el-form-item>
 
       <el-form-item v-if="isEdit" label="状态">
-        <el-select v-model="form.status" style="width: 100%">
+        <el-select v-model="form.status" style="width: 100%" :disabled="isEdit && !canEdit">
           <el-option label="待开始" value="待开始" />
           <el-option label="进行中" value="进行中" />
           <el-option label="已完成" value="已完成" />
@@ -173,9 +195,18 @@ async function submit() {
       </el-form-item>
     </el-form>
 
+    <el-alert
+      v-if="isEdit && !canEdit"
+      type="info"
+      :closable="false"
+      style="margin-bottom: 12px"
+    >
+      你不是此任务的负责人，仅可查看
+    </el-alert>
+
     <template #footer>
       <el-button @click="emit('close')" :disabled="submitting">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="submit">
+      <el-button v-if="!isEdit || canEdit" type="primary" :loading="submitting" @click="submit">
         {{ isEdit ? "保存修改" : "创建任务" }}
       </el-button>
     </template>

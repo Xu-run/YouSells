@@ -33,7 +33,7 @@ management:
 
 app:
   cors:
-    allowed-origins: ${WEB_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+    allowed-origins: ${WEB_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
   jwt:
     secret: ${JWT_SECRET:VGhpc0lzQVRlc3RTZWNyZXRLZXlGb3JZb3VTZWxsc0pXVEF1dGg0NTY3ODkwMTIzNA==}
     access-token-expire-seconds: ${JWT_ACCESS_TOKEN_EXPIRE_SECONDS:43200}

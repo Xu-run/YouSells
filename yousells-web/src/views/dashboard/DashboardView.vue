@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch, nextTick } from "vue";
 import { ElMessage } from "element-plus";
+import { useRouter } from "vue-router";
+import { RouteName } from "@/router/route-names";
+import { useAuthStore } from "@/stores/auth";
+import { useUserStore } from "@/stores/user";
 import PageSection from "@/components/app/PageSection.vue";
 import DashboardStatCards from "@/components/dashboard/DashboardStatCards.vue";
 import DashboardTaskList from "@/components/dashboard/DashboardTaskList.vue";
@@ -8,33 +12,90 @@ import DashboardCustomerList from "@/components/dashboard/DashboardCustomerList.
 import { fetchDashboardOverview } from "@/api/dashboard";
 import type { DashboardOverview } from "@/types/dashboard";
 import { isUnauthorizedError } from "@/utils/request-error";
+import {
+  User,
+  DocumentChecked,
+  List,
+  ChatLineSquare,
+  TrendCharts,
+  PieChart,
+  Bell,
+  Calendar
+} from "@element-plus/icons-vue";
+
+const router = useRouter();
+const authStore = useAuthStore();
+const userStore = useUserStore();
 
 const loading = ref(false);
 const error = ref(false);
 const overview = ref<DashboardOverview | null>(null);
+const chartLoading = ref(true);
+
+// Charts refs
+const trendChartRef = ref<HTMLDivElement | null>(null);
+const pieChartRef = ref<HTMLDivElement | null>(null);
+let trendChartInstance: any = null;
+let pieChartInstance: any = null;
+
+
+
+const greeting = computed(() => {
+  const hour = new Date().getHours();
+  const name = authStore.currentUser?.realName ?? "";
+  if (hour >= 5 && hour < 12) return `早安，${name} ☀️`;
+  if (hour >= 12 && hour < 18) return `下午好，${name} 🌤️`;
+  return `晚上好，${name} 🌙`;
+});
+
+const todaySummary = computed(() => {
+  if (!overview.value) return "数据加载中...";
+  const pending = overview.value.todayPendingFollowCount ?? 0;
+  const overdue = overview.value.overdueCustomerCount ?? 0;
+  const tasks = overview.value.todayTasks?.length ?? 0;
+  const parts: string[] = [];
+  if (pending > 0) parts.push(`今日 ${pending} 项待跟进`);
+  if (overdue > 0) parts.push(`${overdue} 位客户已逾期`);
+  if (tasks > 0) parts.push(`${tasks} 个任务待处理`);
+  if (parts.length === 0) return "今日暂无待办，保持良好的工作状态 💪";
+  return parts.join("，") + "，加油！";
+});
 
 const stats = computed(() => {
   if (!overview.value) {
     return [
-      { label: "今日待跟进", value: 0 },
-      { label: "逾期客户", value: 0 },
-      { label: "最近新增", value: 0 },
-      { label: "高意向客户", value: 0 }
+      { label: "客户总数", value: 0, icon: "Users" },
+      { label: "今日待跟进", value: 0, icon: "Bell" },
+      { label: "逾期客户", value: 0, icon: "Warning" },
+      { label: "本周新增", value: 0, icon: "Plus" },
+      { label: "高意向客户", value: 0, icon: "Star" },
+      { label: "本月成交", value: 0, icon: "Success" }
     ];
   }
   return [
-    { label: "今日待跟进", value: overview.value.todayPendingFollowCount },
-    { label: "逾期客户", value: overview.value.overdueCustomerCount },
-    { label: "最近新增", value: overview.value.recentNewCustomerCount },
-    { label: "高意向客户", value: overview.value.highIntentCustomerCount }
+    { label: "客户总数", value: overview.value.totalCustomerCount ?? 0, icon: "Users" },
+    { label: "今日待跟进", value: overview.value.todayPendingFollowCount ?? 0, icon: "Bell" },
+    { label: "逾期客户", value: overview.value.overdueCustomerCount ?? 0, icon: "Warning" },
+    { label: "本周新增", value: overview.value.recentNewCustomerCount ?? 0, icon: "Plus" },
+    { label: "高意向客户", value: overview.value.highIntentCustomerCount ?? 0, icon: "Star" },
+    { label: "本月成交", value: overview.value.monthlyClosedCount ?? 0, icon: "Success" }
   ];
 });
+
+const quickActions = [
+  { label: "新建客户", icon: User, color: "#2563eb", route: RouteName.CustomerList, action: () => router.push({ name: RouteName.CustomerList }) },
+  { label: "写日报", icon: DocumentChecked, color: "#10b981", route: RouteName.DailyReport, action: () => router.push({ name: RouteName.DailyReport }) },
+  { label: "新建任务", icon: List, color: "#f59e0b", route: RouteName.TaskBoard, action: () => router.push({ name: RouteName.TaskBoard }) },
+  { label: "提问题", icon: ChatLineSquare, color: "#8b5cf6", route: RouteName.TopicList, action: () => router.push({ name: RouteName.TopicList }) }
+];
 
 async function loadOverview() {
   error.value = false;
   loading.value = true;
   try {
     overview.value = await fetchDashboardOverview();
+    // Update charts with real data after overview loads
+    await updateCharts();
   } catch (e) {
     if (isUnauthorizedError(e)) {
       return;
@@ -46,8 +107,98 @@ async function loadOverview() {
   }
 }
 
+async function updateCharts() {
+  if (!overview.value) return;
+  chartLoading.value = true;
+  try {
+    const echarts = await import("echarts");
+    await nextTick();
+
+    // Update trend chart
+    if (trendChartRef.value && overview.value.trendData?.length > 0) {
+      if (!trendChartInstance) {
+        trendChartInstance = echarts.init(trendChartRef.value);
+      }
+      trendChartInstance.setOption({
+        tooltip: { trigger: "axis" },
+        grid: { left: "3%", right: "4%", bottom: "3%", top: "10%", containLabel: true },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          data: overview.value.trendData.map(d => d.date),
+          axisLine: { lineStyle: { color: "#e2e8f0" } },
+          axisLabel: { color: "#94a3b8", fontSize: 11 }
+        },
+        yAxis: {
+          type: "value",
+          axisLine: { show: false },
+          splitLine: { lineStyle: { color: "#f1f5f9" } },
+          axisLabel: { color: "#94a3b8", fontSize: 11 }
+        },
+        series: [{
+          name: "新增客户",
+          type: "line",
+          smooth: true,
+          symbol: "none",
+          lineStyle: { color: "#2563eb", width: 2 },
+          areaStyle: {
+            color: {
+              type: "linear",
+              x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: "rgba(37, 99, 235, 0.15)" },
+                { offset: 1, color: "rgba(37, 99, 235, 0.01)" }
+              ]
+            }
+          },
+          data: overview.value.trendData.map(d => d.count)
+        }]
+      });
+    }
+
+    // Update pie chart
+    if (pieChartRef.value && overview.value.progressDistribution?.length > 0) {
+      if (!pieChartInstance) {
+        pieChartInstance = echarts.init(pieChartRef.value);
+      }
+      pieChartInstance.setOption({
+        tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
+        legend: {
+          bottom: "0%",
+          left: "center",
+          itemWidth: 10,
+          itemHeight: 10,
+          textStyle: { color: "#64748b", fontSize: 11 }
+        },
+        series: [{
+          type: "pie",
+          radius: ["40%", "70%"],
+          center: ["50%", "45%"],
+          avoidLabelOverlap: false,
+          itemStyle: { borderRadius: 4, borderColor: "#fff", borderWidth: 2 },
+          label: { show: false },
+          emphasis: { label: { show: true, fontSize: 14, fontWeight: "bold" } },
+          data: overview.value.progressDistribution.map(d => ({ name: d.stage, value: d.count })),
+          color: ["#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"]
+        }]
+      });
+    }
+  } catch {
+    // echarts not available
+  } finally {
+    chartLoading.value = false;
+  }
+}
+
+function handleResize() {
+  trendChartInstance?.resize();
+  pieChartInstance?.resize();
+}
+
 onMounted(() => {
   void loadOverview();
+  void userStore.loadUsers();
+  window.addEventListener("resize", handleResize);
 });
 </script>
 
@@ -61,16 +212,218 @@ onMounted(() => {
         <el-button :loading="loading" @click="loadOverview">刷新数据</el-button>
       </template>
 
+      <!-- Welcome Banner -->
+      <div class="dashboard-welcome">
+        <div>
+          <h2 class="dashboard-welcome__title">{{ greeting }}</h2>
+          <p class="dashboard-welcome__summary">{{ todaySummary }}</p>
+        </div>
+        <el-icon class="dashboard-welcome__icon"><Calendar /></el-icon>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <div
+          v-for="action in quickActions"
+          :key="action.label"
+          class="quick-action-card"
+          @click="action.action"
+        >
+          <div class="quick-action__icon" :style="{ background: action.color + '12', color: action.color }">
+            <el-icon size="20"><component :is="action.icon" /></el-icon>
+          </div>
+          <span class="quick-action__label">{{ action.label }}</span>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
       <DashboardStatCards :stats :loading />
 
+      <!-- Charts -->
+      <div class="dashboard-charts">
+        <div class="chart-card">
+          <div class="chart-card__header">
+            <el-icon><TrendCharts /></el-icon>
+            <span>近30天客户增长趋势</span>
+          </div>
+          <div ref="trendChartRef" class="chart-card__body" v-loading="chartLoading" />
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__header">
+            <el-icon><PieChart /></el-icon>
+            <span>客户进度分布</span>
+          </div>
+          <div ref="pieChartRef" class="chart-card__body" v-loading="chartLoading" />
+        </div>
+      </div>
+
+      <!-- Error State -->
       <div v-if="error" class="dashboard-error">
         <p>数据加载失败，请点击刷新重试</p>
       </div>
 
-      <div v-else-if="overview" class="split-grid">
-        <DashboardTaskList :tasks="overview.todayTasks" :loading />
-        <DashboardCustomerList :customers="overview.focusCustomers" :loading />
+      <!-- Todo Lists -->
+      <div v-else-if="overview" class="dashboard-todos">
+        <div class="todo-card">
+          <div class="todo-card__header">
+            <el-icon><Bell /></el-icon>
+            <span>今日公共安排</span>
+          </div>
+          <DashboardTaskList :tasks="overview.todayTasks" :loading />
+        </div>
+        <div class="todo-card">
+          <div class="todo-card__header">
+            <el-icon><User /></el-icon>
+            <span>重点客户</span>
+          </div>
+          <DashboardCustomerList :customers="overview.focusCustomers" :loading />
+        </div>
       </div>
     </PageSection>
   </div>
 </template>
+
+<style scoped>
+.dashboard-welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-radius: var(--radius-lg);
+  color: #fff;
+}
+
+.dashboard-welcome__title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.dashboard-welcome__summary {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dashboard-welcome__icon {
+  font-size: 32px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.quick-action-card:hover {
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-1px);
+}
+
+.quick-action__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+}
+
+.quick-action__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+.chart-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.chart-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.chart-card__body {
+  height: 220px;
+  width: 100%;
+}
+
+.dashboard-todos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.todo-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.todo-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 1100px) {
+  .quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .quick-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-todos {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-welcome {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+</style>

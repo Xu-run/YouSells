@@ -5,8 +5,9 @@ import { ElMessage } from "element-plus";
 import PageSection from "@/components/app/PageSection.vue";
 import CustomerFilterBar from "@/components/customer-list/CustomerFilterBar.vue";
 import CustomerTable from "@/components/customer-list/CustomerTable.vue";
-import { fetchCustomers } from "@/api/customer-list";
-import type { CustomerListItem, CustomerQuery } from "@/types/customer-list";
+import CustomerCreateDialog from "@/components/customer-list/CustomerCreateDialog.vue";
+import { fetchCustomers, createCustomer } from "@/api/customer-list";
+import type { CustomerListItem, CustomerQuery, CustomerCreateRequest } from "@/types/customer-list";
 import { RouteName } from "@/router/route-names";
 import { isUnauthorizedError } from "@/utils/request-error";
 
@@ -15,6 +16,8 @@ const loading = ref(false);
 const error = ref(false);
 const customers = ref<CustomerListItem[]>([]);
 const total = ref(0);
+const createDialogVisible = ref(false);
+const createLoading = ref(false);
 
 const query = reactive<CustomerQuery>({
   page: 1,
@@ -41,16 +44,33 @@ async function loadCustomers() {
 }
 
 function onSearch() {
+  query.page = 1;
   void loadCustomers();
 }
 
 function onReset() {
+  query.page = 1;
   void loadCustomers();
 }
 
 function onPageChange(page: number) {
   query.page = page;
   void loadCustomers();
+}
+
+async function onCreateSubmit(data: CustomerCreateRequest) {
+  createLoading.value = true;
+  try {
+    await createCustomer(data);
+    ElMessage.success("客户创建成功");
+    createDialogVisible.value = false;
+    query.page = 1;
+    await loadCustomers();
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : "创建失败");
+  } finally {
+    createLoading.value = false;
+  }
 }
 
 function onRowClick(row: CustomerListItem) {
@@ -74,6 +94,7 @@ onMounted(() => {
       description="学生客户总表，支持按年级/进度/意向筛选"
     >
       <template #extra>
+        <el-button type="primary" @click="createDialogVisible = true">+ 新建客户</el-button>
         <el-button :loading="loading" @click="loadCustomers">刷新列表</el-button>
       </template>
 
@@ -93,5 +114,11 @@ onMounted(() => {
         @row-click="onRowClick"
       />
     </PageSection>
+
+    <CustomerCreateDialog
+      v-model:visible="createDialogVisible"
+      :loading="createLoading"
+      @submit="onCreateSubmit"
+    />
   </div>
 </template>

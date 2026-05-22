@@ -23,7 +23,11 @@ const followUps = ref<FollowUpRecord[]>([]);
 async function loadData() {
   loading.value = true;
   try {
-    const id = String(route.params.id ?? "1001");
+    const id = String(route.params.id);
+    if (!id || id === "undefined") {
+      ElMessage.error("客户 ID 无效");
+      return;
+    }
     const [detailData, followUpData] = await Promise.all([
       fetchCustomerDetail(id),
       fetchFollowUps(id)

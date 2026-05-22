@@ -22,3 +22,15 @@ export interface CustomerQuery {
   intent?: string;
   ownerUserId?: number;
 }
+
+export interface CustomerCreateRequest {
+  realName: string;
+  grade: string;
+  major: string;
+  className?: string;
+  inviterUserId: number;
+  ownerUserId: number;
+  progress: string;
+  intent: string;
+  inviterNote?: string;
+}

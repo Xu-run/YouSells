@@ -55,8 +55,8 @@ public class CustomerConvert {
         entity.setClassName(request.className());
         entity.setInviterUserId(request.inviterUserId());
         entity.setOwnerUserId(request.ownerUserId());
-        entity.setProgress(request.progress() != null ? request.progress() : "职规");
-        entity.setIntent(request.intent() != null ? request.intent() : "观望");
+        entity.setProgress(request.progress());
+        entity.setIntent(request.intent());
         entity.setInviterNote(request.inviterNote());
         return entity;
     }

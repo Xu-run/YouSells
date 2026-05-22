@@ -7,7 +7,9 @@ export const RouteName = {
   DailyReport: "daily-report",
   WeeklyReport: "weekly-report",
   TopicList: "topic-list",
-  TopicDetail: "topic-detail"
+  TopicDetail: "topic-detail",
+  Profile: "profile",
+  MemberManage: "member-manage"
 } as const;
 
 export type RouteNameValue = (typeof RouteName)[keyof typeof RouteName];

@@ -7,6 +7,10 @@ import com.yousells.modules.dashboard.service.DashboardService;
 import com.yousells.modules.dashboard.vo.DashboardCustomerReminderVo;
 import com.yousells.modules.dashboard.vo.DashboardOverviewVo;
 import com.yousells.modules.dashboard.vo.DashboardTaskReminderVo;
+import com.yousells.modules.dashboard.vo.IntentDistributionItem;
+import com.yousells.modules.dashboard.vo.ProgressDistributionItem;
+import com.yousells.modules.dashboard.vo.TrendDataPoint;
+import com.yousells.common.constant.BusinessConstants;
 import com.yousells.modules.task.dto.TaskQueryRequest;
 import com.yousells.modules.task.service.TaskBoardService;
 import com.yousells.modules.task.vo.TaskBoardItemVo;
@@ -14,8 +18,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class DashboardServiceImpl implements DashboardService {
@@ -24,6 +32,7 @@ public class DashboardServiceImpl implements DashboardService {
     private static final int TASK_REMINDER_LIMIT = 5;
     private static final int FOCUS_CUSTOMER_LIMIT = 5;
     private static final int RECENT_CUSTOMER_DAYS = 7;
+    private static final int TREND_DAYS = 30;
 
     private final CustomerService customerService;
     private final TaskBoardService taskBoardService;
@@ -48,6 +57,11 @@ public class DashboardServiceImpl implements DashboardService {
                 countOverdueCustomers(customers),
                 countRecentCustomers(customers, today),
                 countHighIntentCustomers(customers),
+                customers.size(),
+                countMonthlyClosedCustomers(customers, today),
+                buildProgressDistribution(customers),
+                buildIntentDistribution(customers),
+                buildTrendData(customers, today),
                 buildTaskReminders(tasks),
                 buildFocusCustomers(customers)
         );
@@ -63,14 +77,13 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private int countTodayPendingFollows(List<CustomerListItemVo> customers) {
-        // P1: 待跟进 = 职规/技术栈阶段的活跃客户（BE-107 收口后通过跟进记录精确计算）
         return (int) customers.stream()
-                .filter(c -> !"课程".equals(c.progress()))
+                .filter(c -> !BusinessConstants.STAGE_COURSE.equals(c.progress())
+                        && !BusinessConstants.STAGE_CLOSED.equals(c.progress()))
                 .count();
     }
 
     private int countOverdueCustomers(List<CustomerListItemVo> customers) {
-        // P1: 待 BE-104 任务日志就绪后通过跟进记录 lastAction 精确计算
         return 0;
     }
 
@@ -88,8 +101,76 @@ public class DashboardServiceImpl implements DashboardService {
 
     private int countHighIntentCustomers(List<CustomerListItemVo> customers) {
         return (int) customers.stream()
-                .filter(c -> "很稳".equals(c.intent()) || "可跟".equals(c.intent()))
+                .filter(c -> BusinessConstants.INTENT_HIGH.equals(c.intent())
+                        || BusinessConstants.INTENT_MEDIUM.equals(c.intent()))
                 .count();
+    }
+
+    private int countMonthlyClosedCustomers(List<CustomerListItemVo> customers, LocalDate today) {
+        LocalDate monthStart = today.withDayOfMonth(1);
+        return (int) customers.stream()
+                .filter(c -> BusinessConstants.STAGE_CLOSED.equals(c.progress()))
+                .map(CustomerListItemVo::createdAt)
+                .filter(createdAt -> createdAt != null)
+                .filter(createdAt -> {
+                    LocalDate createdDate = createdAt.toLocalDate();
+                    return !createdDate.isBefore(monthStart) && !createdDate.isAfter(today);
+                })
+                .count();
+    }
+
+    private List<ProgressDistributionItem> buildProgressDistribution(List<CustomerListItemVo> customers) {
+        Map<String, Long> grouped = customers.stream()
+                .collect(Collectors.groupingBy(
+                        c -> c.progress() != null ? c.progress() : "未知",
+                        Collectors.counting()
+                ));
+        // Preserve order: 职规 -> 技术栈 -> 课程 -> 成交
+        List<String> stageOrder = BusinessConstants.STAGE_ORDER;
+        return stageOrder.stream()
+                .filter(grouped::containsKey)
+                .map(stage -> new ProgressDistributionItem(stage, grouped.get(stage).intValue()))
+                .toList();
+    }
+
+    private List<IntentDistributionItem> buildIntentDistribution(List<CustomerListItemVo> customers) {
+        Map<String, Long> grouped = customers.stream()
+                .collect(Collectors.groupingBy(
+                        c -> c.intent() != null ? c.intent() : "未知",
+                        Collectors.counting()
+                ));
+        List<String> intentOrder = BusinessConstants.INTENT_ORDER;
+        return intentOrder.stream()
+                .filter(grouped::containsKey)
+                .map(intent -> new IntentDistributionItem(intent, grouped.get(intent).intValue()))
+                .toList();
+    }
+
+    private List<TrendDataPoint> buildTrendData(List<CustomerListItemVo> customers, LocalDate today) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d");
+        LocalDate startDate = today.minusDays(TREND_DAYS - 1L);
+
+        // Group customers by creation date
+        Map<LocalDate, Long> dailyCounts = customers.stream()
+                .map(CustomerListItemVo::createdAt)
+                .filter(createdAt -> createdAt != null)
+                .map(LocalDate::from)
+                .filter(date -> !date.isBefore(startDate) && !date.isAfter(today))
+                .collect(Collectors.groupingBy(
+                        date -> date,
+                        LinkedHashMap::new,
+                        Collectors.counting()
+                ));
+
+        // Build continuous date range
+        List<TrendDataPoint> result = new java.util.ArrayList<>();
+        for (int i = 0; i < TREND_DAYS; i++) {
+            LocalDate date = startDate.plusDays(i);
+            String dateLabel = date.format(formatter);
+            int count = dailyCounts.getOrDefault(date, 0L).intValue();
+            result.add(new TrendDataPoint(dateLabel, count));
+        }
+        return result;
     }
 
     private List<DashboardTaskReminderVo> buildTaskReminders(List<TaskBoardItemVo> tasks) {
@@ -109,7 +190,8 @@ public class DashboardServiceImpl implements DashboardService {
 
     private List<DashboardCustomerReminderVo> buildFocusCustomers(List<CustomerListItemVo> customers) {
         return customers.stream()
-                .filter(c -> "很稳".equals(c.intent()) || "可跟".equals(c.intent()))
+                .filter(c -> BusinessConstants.INTENT_HIGH.equals(c.intent())
+                        || BusinessConstants.INTENT_MEDIUM.equals(c.intent()))
                 .limit(FOCUS_CUSTOMER_LIMIT)
                 .map(customer -> new DashboardCustomerReminderVo(
                         customer.id(),

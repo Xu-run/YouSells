@@ -7,7 +7,7 @@ SET NAMES utf8mb4;
 -- 1. 用户种子（2人：T2 队长 + T0 成员）
 INSERT INTO users (id, username, password_hash, real_name, level, manager_user_id, status)
 VALUES
-    (1, 'admin', '$2a$10$tZJK87gM16/lFCEW8f36uen8t2dbOHAFA0a6jKdxUAOBMO2pI72p6', '秦梓源', 'T2', NULL, 'ACTIVE'),
+    (1, 'admin', '$2a$10$tZJK87gM16/lFCEW8f36uen8t2dbOHAFA0a6jKdxUAOBMO2pI72p6', '秦梓源', 'T3', NULL, 'ACTIVE'),
     (2, 'member', '$2a$10$FVamKOa8CyTGdDWBeGd04emjcWCIWEwJgFU.lsGDlHA8qE5SSZ4oa', '小赵', 'T0', 1, 'ACTIVE')
 ON DUPLICATE KEY UPDATE real_name = VALUES(real_name), level = VALUES(level), manager_user_id = VALUES(manager_user_id);
 

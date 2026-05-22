@@ -61,6 +61,16 @@ const router = createRouter({
           path: "topics/:id",
           name: RouteName.TopicDetail,
           component: () => import("@/views/topic/TopicDetailView.vue")
+        },
+        {
+          path: "settings/profile",
+          name: RouteName.Profile,
+          component: () => import("@/views/settings/ProfileView.vue")
+        },
+        {
+          path: "settings/members",
+          name: RouteName.MemberManage,
+          component: () => import("@/views/settings/MemberManageView.vue")
         }
       ]
     }

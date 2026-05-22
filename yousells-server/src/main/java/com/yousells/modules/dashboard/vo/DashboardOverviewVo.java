@@ -7,6 +7,11 @@ public record DashboardOverviewVo(
         int overdueCustomerCount,
         int recentNewCustomerCount,
         int highIntentCustomerCount,
+        int totalCustomerCount,
+        int monthlyClosedCount,
+        List<ProgressDistributionItem> progressDistribution,
+        List<IntentDistributionItem> intentDistribution,
+        List<TrendDataPoint> trendData,
         List<DashboardTaskReminderVo> todayTasks,
         List<DashboardCustomerReminderVo> focusCustomers
 ) {

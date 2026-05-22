@@ -1,6 +1,14 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import AppHeader from "@/components/app/AppHeader.vue";
 import AppSidebar from "@/components/app/AppSidebar.vue";
+import { useUserStore } from "@/stores/user";
+
+const userStore = useUserStore();
+
+onMounted(() => {
+  void userStore.loadUsers();
+});
 </script>
 
 <template>

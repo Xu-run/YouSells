@@ -4,6 +4,7 @@ export interface TaskBoardItem {
   direction: string;
   status: string;
   priority: string;
+  ownerUserId: number;
   ownerDisplayName: string;
   dueAt: string | null;
 }

@@ -37,26 +37,7 @@ public class AuthServiceImpl implements AuthService {
         this.jwtProperties = jwtProperties;
     }
 
-    @PostConstruct
-    void seedUsers() {
-        seedUserIfNotExists(1L, "admin", "秦梓源", "T2", null, "admin123");
-        seedUserIfNotExists(2L, "member", "小赵", "T0", 1L, "member123");
-    }
 
-    private void seedUserIfNotExists(Long id, String username, String realName, String level, Long managerUserId, String rawPassword) {
-        if (userMapper.selectById(id) != null) {
-            return;
-        }
-        UserEntity user = new UserEntity();
-        user.setId(id);
-        user.setUsername(username);
-        user.setPasswordHash(passwordEncoder.encode(rawPassword));
-        user.setRealName(realName);
-        user.setLevel(level);
-        user.setManagerUserId(managerUserId);
-        user.setStatus("ACTIVE");
-        userMapper.insert(user);
-    }
 
     @Override
     public LoginResultVo login(LoginRequest request) {

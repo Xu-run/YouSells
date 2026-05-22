@@ -49,5 +49,18 @@ export function datetime(raw: string | null | undefined): string {
   const day = String(d.getDate()).padStart(2, "0");
   const h = String(d.getHours()).padStart(2, "0");
   const min = String(d.getMinutes()).padStart(2, "0");
-  return `${m}-${d} ${h}:${min}`;
+  return `${m}-${day} ${h}:${min}`;
+}
+
+/** yyyy-MM-ddTHH:mm:ss → yyyy-MM-dd HH:mm */
+export function formatDate(raw: string | null | undefined): string {
+  if (!raw) return "-";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${day} ${h}:${min}`;
 }
