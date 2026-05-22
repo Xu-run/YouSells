@@ -5,9 +5,8 @@ import { ElMessage } from "element-plus";
 import PageSection from "@/components/app/PageSection.vue";
 import CustomerFilterBar from "@/components/customer-list/CustomerFilterBar.vue";
 import CustomerTable from "@/components/customer-list/CustomerTable.vue";
-import CustomerTagPanel from "@/components/customer-list/CustomerTagPanel.vue";
 import { fetchCustomers } from "@/api/customer-list";
-import type { CustomerListItem, CustomerQuery, CustomerTag } from "@/types/customer-list";
+import type { CustomerListItem, CustomerQuery } from "@/types/customer-list";
 import { RouteName } from "@/router/route-names";
 import { isUnauthorizedError } from "@/utils/request-error";
 
@@ -63,12 +62,6 @@ function onQueryUpdate(v: CustomerQuery) {
   Object.assign(query, v);
 }
 
-function onTagClick(tag: CustomerTag) {
-  query.keyword = tag.tagName;
-  query.page = 1;
-  void loadCustomers();
-}
-
 onMounted(() => {
   void loadCustomers();
 });
@@ -77,8 +70,8 @@ onMounted(() => {
 <template>
   <div class="page-shell">
     <PageSection
-      title="客户总表"
-      description="统一管理客户线索与跟进状态，支持多维度筛选与快速定位。"
+      title="客户管理"
+      description="学生客户总表，支持按年级/进度/意向筛选"
     >
       <template #extra>
         <el-button :loading="loading" @click="loadCustomers">刷新列表</el-button>
@@ -86,14 +79,8 @@ onMounted(() => {
 
       <CustomerFilterBar :model-value="query" :loading @update:model-value="onQueryUpdate" @search="onSearch" @reset="onReset" />
 
-      <CustomerTagPanel @tag-click="onTagClick" />
-
       <div v-if="error" class="dashboard-error">
         <p>数据加载失败，请点击刷新重试</p>
-      </div>
-
-      <div v-else class="table-summary">
-        <span>当前展示：{{ customers.length }} 条 / 共 {{ total }} 条</span>
       </div>
 
       <CustomerTable

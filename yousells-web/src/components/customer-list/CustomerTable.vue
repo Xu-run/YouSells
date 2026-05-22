@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import type { CustomerListItem } from "@/types/customer-list";
-import { stageLabel, intentLabel } from "@/constants/stage";
-import { relativeDate } from "@/utils/format";
 
 defineProps<{
   customers: CustomerListItem[];
@@ -15,57 +13,58 @@ const emit = defineEmits<{
   (e: "page-change", page: number): void;
   (e: "row-click", row: CustomerListItem): void;
 }>();
+
+function intentTagType(intent: string): "success" | "warning" | "info" | "danger" {
+  const map: Record<string, "success" | "warning" | "info" | "danger"> = {
+    "很稳": "success", "可跟": "warning", "观望": "info", "冷淡": "danger"
+  };
+  return map[intent] || "info";
+}
+
+function progressTagType(progress: string): "success" | "warning" | "info" {
+  const map: Record<string, "success" | "warning" | "info"> = {
+    "课程": "success", "技术栈": "warning", "职规": "info"
+  };
+  return map[progress] || "info";
+}
 </script>
 
 <template>
   <div class="customer-table-wrapper">
     <el-table
       :data="customers"
-      border
-      stripe
       v-loading="loading"
       highlight-current-row
       @row-click="(row: CustomerListItem) => emit('row-click', row)"
     >
-      <el-table-column prop="customerCode" label="客户编号" min-width="150" />
-      <el-table-column prop="nickname" label="昵称" min-width="120" />
-      <el-table-column prop="sourcePlatform" label="来源平台" min-width="110" />
-      <el-table-column prop="intentLevel" label="意向等级" width="130">
+      <el-table-column prop="realName" label="姓名" width="100" />
+      <el-table-column prop="grade" label="年级" width="80">
         <template #default="{ row }">
-          {{ intentLabel(row.intentLevel) }}
+          <el-tag size="small" type="info">{{ row.grade }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="currentStage" label="当前阶段" min-width="120">
+      <el-table-column prop="major" label="专业" min-width="140" />
+      <el-table-column prop="className" label="班级" width="110">
         <template #default="{ row }">
-          {{ stageLabel(row.currentStage) }}
+          {{ row.className || '—' }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="progress" label="进度" width="100">
+        <template #default="{ row }">
+          <el-tag size="small" :type="progressTagType(row.progress)">{{ row.progress }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="intent" label="意向" width="90">
+        <template #default="{ row }">
+          <el-tag size="small" :type="intentTagType(row.intent)">{{ row.intent }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="ownerDisplayName" label="负责人" width="110" />
-      <el-table-column prop="nextFollowAt" label="下次跟进" min-width="130">
-        <template #default="{ row }">
-          {{ relativeDate(row.nextFollowAt) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="标签" min-width="150">
-        <template #default="{ row }">
-          <template v-if="row.tags.length">
-            <el-tag
-              v-for="tag in row.tags"
-              :key="tag"
-              size="small"
-              effect="plain"
-              style="margin-right: 4px"
-            >
-              {{ tag }}
-            </el-tag>
-          </template>
-          <span v-else class="tag-none">无</span>
-        </template>
-      </el-table-column>
+      <el-table-column prop="inviterDisplayName" label="邀约人" width="110" />
     </el-table>
 
     <el-pagination
-      v-if="total > 0"
+      v-if="total > pageSize"
       :current-page="page"
       :page-size="pageSize"
       :total="total"

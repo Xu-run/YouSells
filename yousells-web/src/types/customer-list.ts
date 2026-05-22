@@ -1,30 +1,24 @@
+// P1 — 学生客户模型
 export interface CustomerListItem {
   id: number;
-  customerCode: string;
-  nickname: string;
-  customerType: string;
-  sourcePlatform: string;
-  intentLevel: string;
-  currentStage: string;
+  realName: string;
+  grade: string;
+  major: string;
+  className: string | null;
+  progress: string;
+  intent: string;
   ownerDisplayName: string;
-  lastContactAt: string | null;
-  nextFollowAt: string | null;
-  tags: string[];
-}
-
-export interface CustomerTag {
-  id: number;
-  tagName: string;
-  tagType: string;
-  tagColor: string | null;
+  inviterDisplayName: string;
+  createdAt: string | null;
 }
 
 export interface CustomerQuery {
   page?: number;
   pageSize?: number;
   keyword?: string;
-  intentLevel?: string;
-  currentStage?: string;
+  grade?: string;
+  major?: string;
+  progress?: string;
+  intent?: string;
   ownerUserId?: number;
-  sourcePlatform?: string;
 }

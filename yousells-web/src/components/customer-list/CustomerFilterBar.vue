@@ -12,24 +12,9 @@ const emit = defineEmits<{
   (e: "reset"): void;
 }>();
 
-const intentOptions = [
-  { label: "全部", value: "" },
-  { label: "A", value: "A" },
-  { label: "B", value: "B" },
-  { label: "C", value: "C" },
-  { label: "D", value: "D" }
-];
-
-const stageOptions = [
-  { label: "全部", value: "" },
-  { label: "首轮沟通", value: "FIRST_COMMUNICATION" },
-  { label: "培育中", value: "NURTURING" },
-  { label: "高意向", value: "HIGH_INTENT" },
-  { label: "待成交", value: "PENDING_CLOSE" },
-  { label: "已成交", value: "CONVERTED" },
-  { label: "暂停", value: "PAUSED" },
-  { label: "转考", value: "TRANSFER_TO_EXAM" }
-];
+const gradeOptions = ["全部", "大一", "大二", "大三", "大四"];
+const progressOptions = ["全部", "职规", "技术栈", "课程"];
+const intentOptions = ["全部", "很稳", "可跟", "观望", "冷淡"];
 
 function onSearch() {
   emit("update:modelValue", { ...props.modelValue, page: 1 });
@@ -37,8 +22,7 @@ function onSearch() {
 }
 
 function onReset() {
-  const resetQuery: CustomerQuery = { page: 1, pageSize: props.modelValue.pageSize ?? 20 };
-  emit("update:modelValue", resetQuery);
+  emit("update:modelValue", { page: 1, pageSize: props.modelValue.pageSize ?? 20 });
   emit("reset");
 }
 </script>
@@ -48,39 +32,39 @@ function onReset() {
     <el-input
       :model-value="modelValue.keyword ?? ''"
       :disabled="loading"
-      placeholder="搜索客户昵称/编号"
+      placeholder="搜索姓名/专业"
       clearable
-      style="width: 200px"
+      style="width: 180px"
       @update:model-value="emit('update:modelValue', { ...modelValue, keyword: $event || undefined })"
       @keyup.enter="onSearch"
     />
     <el-select
-      :model-value="modelValue.intentLevel ?? ''"
+      :model-value="modelValue.grade ?? ''"
       :disabled="loading"
-      placeholder="意向等级"
-      style="width: 130px"
-      @update:model-value="emit('update:modelValue', { ...modelValue, intentLevel: $event || undefined }); onSearch()"
+      placeholder="年级"
+      style="width: 100px"
+      @update:model-value="emit('update:modelValue', { ...modelValue, grade: $event || undefined }); onSearch()"
     >
-      <el-option v-for="opt in intentOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+      <el-option v-for="opt in gradeOptions" :key="opt" :label="opt" :value="opt === '全部' ? '' : opt" />
     </el-select>
     <el-select
-      :model-value="modelValue.currentStage ?? ''"
+      :model-value="modelValue.progress ?? ''"
       :disabled="loading"
-      placeholder="当前阶段"
-      style="width: 150px"
-      @update:model-value="emit('update:modelValue', { ...modelValue, currentStage: $event || undefined }); onSearch()"
+      placeholder="进度"
+      style="width: 120px"
+      @update:model-value="emit('update:modelValue', { ...modelValue, progress: $event || undefined }); onSearch()"
     >
-      <el-option v-for="opt in stageOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+      <el-option v-for="opt in progressOptions" :key="opt" :label="opt" :value="opt === '全部' ? '' : opt" />
     </el-select>
-    <el-input
-      :model-value="modelValue.sourcePlatform ?? ''"
+    <el-select
+      :model-value="modelValue.intent ?? ''"
       :disabled="loading"
-      placeholder="来源平台"
-      clearable
-      style="width: 160px"
-      @update:model-value="emit('update:modelValue', { ...modelValue, sourcePlatform: $event || undefined })"
-      @keyup.enter="onSearch"
-    />
+      placeholder="意向"
+      style="width: 120px"
+      @update:model-value="emit('update:modelValue', { ...modelValue, intent: $event || undefined }); onSearch()"
+    >
+      <el-option v-for="opt in intentOptions" :key="opt" :label="opt" :value="opt === '全部' ? '' : opt" />
+    </el-select>
     <el-button type="primary" :loading="loading" @click="onSearch">搜索</el-button>
     <el-button :disabled="loading" @click="onReset">重置</el-button>
   </div>
