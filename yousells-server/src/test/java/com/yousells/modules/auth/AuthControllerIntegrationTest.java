@@ -46,7 +46,7 @@ class AuthControllerIntegrationTest {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.displayName").value("系统管理员"));
+                .andExpect(jsonPath("$.data.realName").value("秦梓源"));
     }
 
     @Test

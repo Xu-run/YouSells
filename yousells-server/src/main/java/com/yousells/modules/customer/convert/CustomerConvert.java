@@ -5,106 +5,71 @@ import com.yousells.modules.customer.dto.CustomerUpdateRequest;
 import com.yousells.modules.customer.entity.CustomerEntity;
 import com.yousells.modules.customer.vo.CustomerDetailVo;
 import com.yousells.modules.customer.vo.CustomerListItemVo;
-import com.yousells.modules.customer.entity.CustomerTagEntity;
-import com.yousells.modules.customer.vo.CustomerTagVo;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class CustomerConvert {
 
-    private static final DateTimeFormatter CODE_DATE = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private CustomerConvert() {
+    }
 
-    public static CustomerListItemVo toListItemVo(CustomerEntity entity, String ownerDisplayName, List<String> tags) {
+    public static CustomerListItemVo toListItemVo(CustomerEntity entity, String ownerDisplayName,
+                                                   String inviterDisplayName) {
         return new CustomerListItemVo(
                 entity.getId(),
-                entity.getCustomerCode(),
-                entity.getNickname(),
-                entity.getCustomerType(),
-                entity.getSourcePlatform(),
-                entity.getIntentLevel(),
-                entity.getCurrentStage(),
+                entity.getRealName(),
+                entity.getGrade(),
+                entity.getMajor(),
+                entity.getClassName(),
+                entity.getProgress(),
+                entity.getIntent(),
                 ownerDisplayName,
-                entity.getLastContactAt(),
-                entity.getNextFollowAt(),
-                tags
+                inviterDisplayName,
+                entity.getCreatedAt()
         );
     }
 
     public static CustomerDetailVo toDetailVo(CustomerEntity entity, String ownerDisplayName,
-                                              String assistantDisplayName, List<String> tags) {
+                                               String inviterDisplayName) {
         return new CustomerDetailVo(
                 entity.getId(),
-                entity.getCustomerCode(),
-                entity.getCustomerType(),
-                entity.getNickname(),
-                entity.getContactValue(),
-                entity.getSourcePlatform(),
-                entity.getExpectedMajor(),
-                entity.getBaseLevel(),
-                entity.getInterestDirection(),
-                entity.getIntentLevel(),
-                entity.getCurrentStage(),
-                entity.getCurrentConcern(),
-                entity.getLatestFeedback(),
-                entity.getLastContactAt(),
-                entity.getNextFollowAction(),
-                entity.getNextFollowAt(),
+                entity.getRealName(),
+                entity.getGrade(),
+                entity.getMajor(),
+                entity.getClassName(),
+                entity.getInviterUserId(),
+                inviterDisplayName,
+                entity.getOwnerUserId(),
                 ownerDisplayName,
-                assistantDisplayName,
-                tags,
-                entity.getRemarks()
+                entity.getProgress(),
+                entity.getIntent(),
+                entity.getInviterNote(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
         );
     }
 
     public static CustomerEntity toEntity(CustomerCreateRequest request) {
         CustomerEntity entity = new CustomerEntity();
-        entity.setCustomerCode(generateCustomerCode());
-        entity.setCustomerType(request.customerType());
-        entity.setNickname(request.nickname());
-        entity.setContactValue(request.contactValue());
-        entity.setSourcePlatform(request.sourcePlatform());
-        entity.setExpectedMajor(request.expectedMajor());
-        entity.setBaseLevel(request.baseLevel());
-        entity.setIntentLevel(request.intentLevel());
-        entity.setCurrentStage(request.currentStage());
+        entity.setRealName(request.realName());
+        entity.setGrade(request.grade());
+        entity.setMajor(request.major());
+        entity.setClassName(request.className());
+        entity.setInviterUserId(request.inviterUserId());
         entity.setOwnerUserId(request.ownerUserId());
-        entity.setAssistantUserId(request.assistantUserId());
-        entity.setRemarks(request.remarks());
-        entity.setAddedAt(LocalDateTime.now());
+        entity.setProgress(request.progress() != null ? request.progress() : "职规");
+        entity.setIntent(request.intent() != null ? request.intent() : "观望");
+        entity.setInviterNote(request.inviterNote());
         return entity;
     }
 
     public static void updateEntity(CustomerEntity entity, CustomerUpdateRequest request) {
-        entity.setNickname(request.nickname());
-        entity.setContactValue(request.contactValue());
-        entity.setSourcePlatform(request.sourcePlatform());
-        entity.setExpectedMajor(request.expectedMajor());
-        entity.setBaseLevel(request.baseLevel());
-        entity.setIntentLevel(request.intentLevel());
-        entity.setCurrentStage(request.currentStage());
-        entity.setCurrentConcern(request.currentConcern());
-        entity.setLatestFeedback(request.latestFeedback());
+        entity.setRealName(request.realName());
+        entity.setGrade(request.grade());
+        entity.setMajor(request.major());
+        entity.setClassName(request.className());
+        entity.setInviterUserId(request.inviterUserId());
         entity.setOwnerUserId(request.ownerUserId());
-        entity.setAssistantUserId(request.assistantUserId());
-        entity.setRemarks(request.remarks());
-    }
-
-    public static CustomerTagVo toTagVo(CustomerTagEntity entity) {
-        return new CustomerTagVo(
-                entity.getId(),
-                entity.getTagName(),
-                entity.getTagType(),
-                entity.getTagColor()
-        );
-    }
-
-    private static String generateCustomerCode() {
-        String datePart = LocalDate.now().format(CODE_DATE);
-        int seq = ThreadLocalRandom.current().nextInt(1, 1000);
-        return "C" + datePart + String.format("%03d", seq);
+        entity.setProgress(request.progress());
+        entity.setIntent(request.intent());
+        entity.setInviterNote(request.inviterNote());
     }
 }

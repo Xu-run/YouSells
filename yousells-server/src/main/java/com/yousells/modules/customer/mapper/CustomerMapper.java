@@ -15,15 +15,17 @@ public interface CustomerMapper extends BaseMapper<CustomerEntity> {
 
     IPage<CustomerEntity> pageCustomers(Page<?> page,
                                         @Param("keyword") String keyword,
-                                        @Param("intentLevel") String intentLevel,
-                                        @Param("currentStage") String currentStage,
-                                        @Param("sourcePlatform") String sourcePlatform,
-                                        @Param("ownerUserId") Long ownerUserId);
+                                        @Param("grade") String grade,
+                                        @Param("major") String major,
+                                        @Param("progress") String progress,
+                                        @Param("intent") String intent,
+                                        @Param("ownerUserId") Long ownerUserId,
+                                        @Param("visibleUserIds") List<Long> visibleUserIds);
 
-    List<OwnerDisplayName> selectOwnerDisplayNames(@Param("userIds") List<Long> userIds);
+    List<UserDisplayName> selectUserDisplayNames(@Param("userIds") List<Long> userIds);
 
     @Data
-    class OwnerDisplayName {
+    class UserDisplayName {
         private Long userId;
         private String displayName;
     }

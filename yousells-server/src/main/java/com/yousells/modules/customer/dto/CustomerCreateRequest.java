@@ -4,20 +4,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record CustomerCreateRequest(
-        @NotBlank(message = "nickname cannot be blank")
-        String nickname,
-        @NotBlank(message = "contactValue cannot be blank")
-        String contactValue,
-        @NotBlank(message = "sourcePlatform cannot be blank")
-        String sourcePlatform,
-        String customerType,
-        String expectedMajor,
-        String baseLevel,
-        String intentLevel,
-        String currentStage,
-        @NotNull(message = "ownerUserId cannot be null")
-        Long ownerUserId,
-        Long assistantUserId,
-        String remarks
-) {
-}
+        @NotBlank(message = "realName cannot be blank") String realName,
+        @NotBlank(message = "grade cannot be blank") String grade,
+        @NotBlank(message = "major cannot be blank") String major,
+        String className,
+        @NotNull(message = "inviterUserId cannot be null") Long inviterUserId,
+        @NotNull(message = "ownerUserId cannot be null") Long ownerUserId,
+        String progress,
+        String intent,
+        String inviterNote
+) {}

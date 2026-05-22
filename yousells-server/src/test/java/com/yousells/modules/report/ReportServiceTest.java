@@ -37,7 +37,7 @@ class ReportServiceTest {
     private final WeeklyReportMapper weeklyReportMapper = mock(WeeklyReportMapper.class);
     private final ReportServiceImpl service = new ReportServiceImpl(dailyReportMapper, weeklyReportMapper);
 
-    private static final LoginUser CURRENT_USER = new LoginUser(2L, "member", "普通成员", List.of("MEMBER"));
+    private static final LoginUser CURRENT_USER = new LoginUser(2L, "member", "普通成员", "T0", 1L);
 
     private MockedStatic<SecurityUserContext> securityContextMock;
 

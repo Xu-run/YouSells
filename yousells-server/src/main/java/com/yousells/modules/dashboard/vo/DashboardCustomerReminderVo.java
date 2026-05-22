@@ -4,9 +4,9 @@ import java.time.LocalDateTime;
 
 public record DashboardCustomerReminderVo(
         Long customerId,
-        String nickname,
-        String intentLevel,
-        String currentStage,
+        String realName,
+        String intent,
+        String progress,
         LocalDateTime nextFollowAt
 ) {
 }

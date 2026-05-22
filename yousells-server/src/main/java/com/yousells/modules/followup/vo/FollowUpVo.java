@@ -5,14 +5,11 @@ import java.time.LocalDateTime;
 public record FollowUpVo(
         Long id,
         Long customerId,
-        String followType,
-        String communicatedContent,
-        String customerFeedback,
-        String currentConcern,
+        Long userId,
+        String userDisplayName,
+        String progress,
+        String content,
+        String feedback,
         String nextAction,
-        LocalDateTime nextFollowAt,
-        String operatorDisplayName,
-        String ownerDisplayName,
         LocalDateTime createdAt
-) {
-}
+) {}

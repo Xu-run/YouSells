@@ -19,7 +19,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,74 +35,55 @@ class FollowUpServiceTest {
     @Autowired
     private CustomerMapper customerMapper;
 
-    private Long customerId1;
-    private Long customerId2;
+    private Long customerId;
 
     @BeforeEach
     void setUp() {
-        LoginUser loginUser = new LoginUser(1L, "admin", "管理员", List.of("ADMIN"));
+        LoginUser loginUser = new LoginUser(1L, "admin", "秦梓源", "T2", null);
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(loginUser, null, List.of()));
 
-        CustomerEntity c1 = new CustomerEntity();
-        c1.setCustomerCode("C20260518001");
-        c1.setCustomerType("OLD_GRADE1");
-        c1.setNickname("小林");
-        c1.setContactValue("QQ: 10001");
-        c1.setSourcePlatform("QQ");
-        c1.setIntentLevel("A");
-        c1.setCurrentStage("HIGH_INTENT");
-        c1.setOwnerUserId(10L);
-        customerMapper.insert(c1);
-        customerId1 = c1.getId();
+        CustomerEntity c = new CustomerEntity();
+        c.setRealName("王同学");
+        c.setGrade("大一");
+        c.setMajor("计算机科学");
+        c.setClassName("计科2403");
+        c.setInviterUserId(1L);
+        c.setOwnerUserId(1L);
+        c.setProgress("职规");
+        c.setIntent("可跟");
+        customerMapper.insert(c);
+        customerId = c.getId();
+    }
 
-        CustomerEntity c2 = new CustomerEntity();
-        c2.setCustomerCode("C20260518002");
-        c2.setCustomerType("OLD_GRADE1");
-        c2.setNickname("阿泽");
-        c2.setContactValue("微信: az-2026");
-        c2.setSourcePlatform("微信");
-        c2.setIntentLevel("B");
-        c2.setCurrentStage("NURTURING");
-        c2.setOwnerUserId(20L);
-        customerMapper.insert(c2);
-        customerId2 = c2.getId();
+    @Test
+    void shouldCreateFollowUp() {
+        FollowUpCreateRequest request = new FollowUpCreateRequest(
+                customerId, "职规", "第一次沟通内容", "学生说想了解蓝桥杯", "发蓝桥杯资料");
+        Long id = followUpService.createFollowUp(request);
+        assertThat(id).isNotNull().isPositive();
+    }
 
+    @Test
+    void shouldPageFollowUpsByCustomerId() {
         FollowUpCreateRequest req1 = new FollowUpCreateRequest(
-                customerId1, "CHAT", "第一次沟通", "积极回应", "价格", "发送资料", null);
+                customerId, "职规", "第一次沟通", "感兴趣", "发资料");
         followUpService.createFollowUp(req1);
 
         FollowUpCreateRequest req2 = new FollowUpCreateRequest(
-                customerId2, "GROUP", "拉入群聊", "感兴趣", null, "安排体验", null);
+                customerId, "技术栈", "第二次沟通", "确定方向", "发课程方案");
         followUpService.createFollowUp(req2);
-    }
 
-    @Test
-    void shouldPageAllFollowUps() {
         PageResponse<FollowUpVo> result = followUpService.pageFollowUps(
-                new FollowUpQueryRequest(null, 1, 10));
+                new FollowUpQueryRequest(customerId, 1, 10));
         assertThat(result.total()).isEqualTo(2);
         assertThat(result.list()).hasSize(2);
+        assertThat(result.list().get(0).createdAt())
+                .isAfterOrEqualTo(result.list().get(1).createdAt());
     }
 
     @Test
-    void shouldFilterByCustomerId() {
-        PageResponse<FollowUpVo> result = followUpService.pageFollowUps(
-                new FollowUpQueryRequest(customerId1, 1, 10));
-        assertThat(result.total()).isEqualTo(1);
-        assertThat(result.list().get(0).customerId()).isEqualTo(customerId1);
-    }
-
-    @Test
-    void shouldPaginateFollowUps() {
-        PageResponse<FollowUpVo> result = followUpService.pageFollowUps(
-                new FollowUpQueryRequest(null, 1, 1));
-        assertThat(result.list()).hasSize(1);
-        assertThat(result.total()).isEqualTo(2);
-    }
-
-    @Test
-    void shouldReturnEmptyForNoFollowUps() {
+    void shouldReturnEmptyForCustomerWithoutFollowUps() {
         PageResponse<FollowUpVo> result = followUpService.pageFollowUps(
                 new FollowUpQueryRequest(9999L, 1, 10));
         assertThat(result.total()).isEqualTo(0);
@@ -111,50 +91,30 @@ class FollowUpServiceTest {
     }
 
     @Test
-    void shouldCreateFollowUp() {
+    void shouldIncludeAllFieldsInVo() {
         FollowUpCreateRequest request = new FollowUpCreateRequest(
-                customerId1, "CHAT", "第二次沟通", "确认意向",
-                "课程内容", "发课程大纲", LocalDateTime.of(2026, 6, 1, 10, 0));
-        Long newId = followUpService.createFollowUp(request);
-        assertThat(newId).isNotNull().isPositive();
+                customerId, "课程", "最终沟通", "很满意，决定报名", "安排进课程群");
+        Long id = followUpService.createFollowUp(request);
 
         PageResponse<FollowUpVo> result = followUpService.pageFollowUps(
-                new FollowUpQueryRequest(customerId1, 1, 10));
-        assertThat(result.total()).isEqualTo(2);
+                new FollowUpQueryRequest(customerId, 1, 10));
+        FollowUpVo vo = result.list().get(0);
+        assertThat(vo.id()).isEqualTo(id);
+        assertThat(vo.customerId()).isEqualTo(customerId);
+        assertThat(vo.progress()).isEqualTo("课程");
+        assertThat(vo.content()).isEqualTo("最终沟通");
+        assertThat(vo.feedback()).isEqualTo("很满意，决定报名");
+        assertThat(vo.nextAction()).isEqualTo("安排进课程群");
+        assertThat(vo.createdAt()).isNotNull();
     }
 
     @Test
-    void shouldSyncCustomerOnFollowUpCreate() {
-        LocalDateTime followTime = LocalDateTime.of(2026, 6, 15, 14, 0);
+    void shouldThrowNotFoundWhenCreatingForNonExistentCustomer() {
         FollowUpCreateRequest request = new FollowUpCreateRequest(
-                customerId1, "PHONE", "电话沟通", "考虑中",
-                "时间安排", "电话回访", followTime);
-        followUpService.createFollowUp(request);
-
-        CustomerEntity customer = customerMapper.selectById(customerId1);
-        assertThat(customer.getLatestFeedback()).isEqualTo("电话沟通");
-        assertThat(customer.getLastContactAt()).isNotNull();
-        assertThat(customer.getNextFollowAction()).isEqualTo("电话回访");
-        assertThat(customer.getNextFollowAt()).isEqualTo(followTime);
-        assertThat(customer.getCurrentConcern()).isEqualTo("时间安排");
-    }
-
-    @Test
-    void shouldThrowNotFoundWhenCustomerNotExists() {
-        FollowUpCreateRequest request = new FollowUpCreateRequest(
-                9999L, "CHAT", "内容", null, null, null, null);
+                9999L, "职规", "内容", "反馈", "下一步");
         assertThatThrownBy(() -> followUpService.createFollowUp(request))
                 .isInstanceOf(BusinessException.class)
                 .extracting("code")
                 .isEqualTo(ErrorCodeConstants.NOT_FOUND);
-    }
-
-    @Test
-    void shouldSetDisplayNames() {
-        PageResponse<FollowUpVo> result = followUpService.pageFollowUps(
-                new FollowUpQueryRequest(null, 1, 10));
-        FollowUpVo first = result.list().get(0);
-        assertThat(first.operatorDisplayName()).isNotNull();
-        assertThat(first.ownerDisplayName()).isNotNull();
     }
 }

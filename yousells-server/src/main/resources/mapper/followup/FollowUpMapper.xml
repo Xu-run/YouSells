@@ -5,16 +5,11 @@
     <resultMap id="followUpMap" type="com.yousells.modules.followup.entity.FollowUpEntity">
         <id property="id" column="id"/>
         <result property="customerId" column="customer_id"/>
-        <result property="followType" column="follow_type"/>
-        <result property="communicatedContent" column="communicated_content"/>
-        <result property="customerFeedback" column="customer_feedback"/>
-        <result property="currentConcern" column="current_concern"/>
+        <result property="userId" column="user_id"/>
+        <result property="progress" column="progress"/>
+        <result property="content" column="content"/>
+        <result property="feedback" column="feedback"/>
         <result property="nextAction" column="next_action"/>
-        <result property="nextFollowAt" column="next_follow_at"/>
-        <result property="operatorUserId" column="operator_user_id"/>
-        <result property="ownerUserId" column="owner_user_id"/>
-        <result property="stageBefore" column="stage_before"/>
-        <result property="stageAfter" column="stage_after"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <result property="isDeleted" column="is_deleted"/>
@@ -31,13 +26,13 @@
     </select>
 
     <select id="selectUserDisplayNames" resultType="com.yousells.modules.followup.mapper.FollowUpMapper$UserDisplayName">
-        SELECT id AS userId, display_name AS displayName
+        SELECT id AS userId, real_name AS displayName
         FROM users
         WHERE id IN
         <foreach collection="userIds" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
-          AND is_deleted = 0
+        AND is_deleted = 0
     </select>
 
 </mapper>

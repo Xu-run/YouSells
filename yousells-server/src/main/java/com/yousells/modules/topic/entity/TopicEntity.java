@@ -1,4 +1,4 @@
-package com.yousells.modules.followup.entity;
+package com.yousells.modules.topic.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -12,25 +12,23 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("customer_follow_ups")
-public class FollowUpEntity implements Serializable {
+@TableName("topics")
+public class TopicEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    private Long customerId;
+    private String title;
 
-    private Long userId;
+    private String description;
 
-    private String progress;
+    private String category;
 
-    private String content;
+    private Long authorUserId;
 
-    private String feedback;
-
-    private String nextAction;
+    private Integer solved;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
