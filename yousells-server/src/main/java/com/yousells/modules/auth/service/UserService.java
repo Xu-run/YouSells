@@ -1,6 +1,7 @@
 package com.yousells.modules.auth.service;
 
 import com.yousells.modules.auth.dto.CreateUserRequest;
+import com.yousells.modules.auth.dto.ResignUserRequest;
 import com.yousells.modules.auth.dto.UpdatePasswordRequest;
 import com.yousells.modules.auth.dto.UpdateProfileRequest;
 import com.yousells.modules.auth.dto.UpdateUserRequest;
@@ -22,4 +23,6 @@ public interface UserService {
     Long createUser(CreateUserRequest request);
 
     void updateUser(Long userId, UpdateUserRequest request);
+
+    void resignUser(Long userId, ResignUserRequest request);
 }

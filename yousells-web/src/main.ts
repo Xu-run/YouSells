@@ -1,6 +1,8 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import ElementPlus, { ElMessage } from "element-plus";
+// @ts-ignore
+import zhCn from "element-plus/dist/locale/zh-cn.mjs";
 import "element-plus/dist/index.css";
 import App from "./App.vue";
 import router from "./router";
@@ -8,6 +10,12 @@ import { RouteName } from "@/router/route-names";
 import { useAuthStore } from "@/stores/auth";
 import { AUTH_UNAUTHORIZED_EVENT } from "@/utils/auth-token";
 import "./styles/base.css";
+
+// Initialize theme before rendering
+const savedTheme = localStorage.getItem("yousells-theme");
+const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+const initialTheme = savedTheme === "dark" || savedTheme === "light" ? savedTheme : prefersDark ? "dark" : "light";
+document.documentElement.setAttribute("data-theme", initialTheme);
 
 function installMessageGuard() {
   const originalError = ElMessage.error;
@@ -31,7 +39,7 @@ const pinia = createPinia();
 
 installMessageGuard();
 
-app.use(pinia).use(router).use(ElementPlus);
+app.use(pinia).use(router).use(ElementPlus, { locale: zhCn });
 
 const authStore = useAuthStore(pinia);
 

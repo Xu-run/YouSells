@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yousells.common.constant.ErrorCodeConstants;
 import com.yousells.common.exception.BusinessException;
 import com.yousells.common.response.PageResponse;
+import com.yousells.common.security.DataScopeHelper;
 import com.yousells.common.security.LoginUser;
 import com.yousells.common.security.SecurityUserContext;
 import com.yousells.modules.auth.mapper.UserMapper;
+import com.yousells.modules.notification.service.NotificationService;
 import com.yousells.modules.task.dto.TaskCreateRequest;
 import com.yousells.modules.task.dto.TaskLogCreateRequest;
 import com.yousells.modules.task.dto.TaskQueryRequest;
@@ -49,6 +51,9 @@ class TaskBoardServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private NotificationService notificationService;
+
     private TaskBoardServiceImpl service;
     private MockedStatic<SecurityUserContext> securityContextMock;
 
@@ -56,8 +61,9 @@ class TaskBoardServiceTest {
 
     @BeforeEach
     void setUp() {
+        DataScopeHelper.invalidateAllCache();
         MockitoAnnotations.openMocks(this);
-        service = new TaskBoardServiceImpl(taskBoardMapper, taskLogMapper, userMapper);
+        service = new TaskBoardServiceImpl(taskBoardMapper, taskLogMapper, userMapper, notificationService);
         securityContextMock = Mockito.mockStatic(SecurityUserContext.class);
         securityContextMock.when(SecurityUserContext::getCurrentUser).thenReturn(TEST_USER);
         securityContextMock.when(SecurityUserContext::requireCurrentUser).thenReturn(TEST_USER);
@@ -157,22 +163,28 @@ class TaskBoardServiceTest {
 
     @Test
     void shouldCreateDownwardTask() {
-        when(taskBoardMapper.insert(Mockito.<TaskBoardEntity>any())).thenAnswer(inv -> {
-            TaskBoardEntity e = inv.getArgument(0);
-            e.setId(100L);
-            return 1;
-        });
+        try (MockedStatic<com.yousells.common.security.DataScopeHelper> mocked =
+                     Mockito.mockStatic(com.yousells.common.security.DataScopeHelper.class)) {
+            mocked.when(() -> com.yousells.common.security.DataScopeHelper.getSubordinateIds(anyLong(), any()))
+                    .thenReturn(List.of(2L));
 
-        Long id = service.createTask(new TaskCreateRequest(
-                "向下派发任务", "任务描述", "向下派发", 2L, null, "高", null));
+            when(taskBoardMapper.insert(Mockito.<TaskBoardEntity>any())).thenAnswer(inv -> {
+                TaskBoardEntity e = inv.getArgument(0);
+                e.setId(100L);
+                return 1;
+            });
 
-        assertEquals(100L, id);
-        verify(taskBoardMapper).insert(Mockito.<TaskBoardEntity>argThat(e ->
-                "向下派发任务".equals(e.getTaskTitle())
-                        && "向下派发".equals(e.getDirection())
-                        && e.getOwnerUserId().equals(2L)
-                        && "待开始".equals(e.getStatus())
-        ));
+            Long id = service.createTask(new TaskCreateRequest(
+                    "向下派发任务", "任务描述", "向下派发", 2L, null, "高", null));
+
+            assertEquals(100L, id);
+            verify(taskBoardMapper).insert(Mockito.<TaskBoardEntity>argThat(e ->
+                    "向下派发任务".equals(e.getTaskTitle())
+                            && "向下派发".equals(e.getDirection())
+                            && e.getOwnerUserId().equals(2L)
+                            && "待开始".equals(e.getStatus())
+            ));
+        }
     }
 
     @Test
@@ -216,6 +228,8 @@ class TaskBoardServiceTest {
     void shouldUpdateTaskStatusWithAutoLog() {
         TaskBoardEntity existing = new TaskBoardEntity();
         existing.setId(1L);
+        existing.setOwnerUserId(TEST_USER.userId());
+        existing.setCreatorUserId(TEST_USER.userId());
         existing.setStatus("待开始");
         when(taskBoardMapper.selectById(1L)).thenReturn(existing);
         when(taskBoardMapper.updateById(Mockito.<TaskBoardEntity>any())).thenReturn(1);
@@ -236,6 +250,8 @@ class TaskBoardServiceTest {
     void shouldAddManualLog() {
         TaskBoardEntity existing = new TaskBoardEntity();
         existing.setId(1L);
+        existing.setOwnerUserId(TEST_USER.userId());
+        existing.setCreatorUserId(TEST_USER.userId());
         when(taskBoardMapper.selectById(1L)).thenReturn(existing);
         when(taskLogMapper.insert(Mockito.<TaskLogEntity>any())).thenReturn(1);
 
@@ -280,5 +296,68 @@ class TaskBoardServiceTest {
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.getTask(999L));
         assertEquals(ErrorCodeConstants.NOT_FOUND, ex.getCode());
+    }
+
+    @Test
+    void shouldForbidGetTaskWhenNotInvolved() {
+        TaskDetailVo detail = new TaskDetailVo(1L, "任务标题", "任务描述", "向下派发", "待开始", "高",
+                "秦梓源", "李四", null, null, 2L, 3L, 4L);
+        when(taskBoardMapper.selectDetailById(1L)).thenReturn(detail);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.getTask(1L));
+        assertEquals(ErrorCodeConstants.FORBIDDEN, ex.getCode());
+    }
+
+    @Test
+    void shouldAllowGetTaskWhenOwner() {
+        TaskDetailVo detail = new TaskDetailVo(1L, "任务标题", "任务描述", "自己规划", "待开始", "高",
+                "秦梓源", "秦梓源", null, null, 1L, 1L, null);
+        when(taskBoardMapper.selectDetailById(1L)).thenReturn(detail);
+        when(taskLogMapper.selectByTaskId(1L)).thenReturn(List.of());
+
+        TaskDetailWithLogsVo result = service.getTask(1L);
+        assertNotNull(result);
+        assertEquals("任务标题", result.task().taskTitle());
+    }
+
+    @Test
+    void shouldAllowGetTaskWhenCreator() {
+        TaskDetailVo detail = new TaskDetailVo(1L, "任务标题", "任务描述", "向下派发", "待开始", "高",
+                "李四", "秦梓源", null, null, 2L, 1L, 3L);
+        when(taskBoardMapper.selectDetailById(1L)).thenReturn(detail);
+        when(taskLogMapper.selectByTaskId(1L)).thenReturn(List.of());
+
+        TaskDetailWithLogsVo result = service.getTask(1L);
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldForbidUpdateTaskStatusWhenNotOwnerOrCreator() {
+        TaskBoardEntity existing = new TaskBoardEntity();
+        existing.setId(1L);
+        existing.setOwnerUserId(2L);
+        existing.setCreatorUserId(3L);
+        existing.setSuggestedToUserId(4L);
+        existing.setStatus("待开始");
+        when(taskBoardMapper.selectById(1L)).thenReturn(existing);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.updateTaskStatus(1L, new TaskStatusUpdateRequest("进行中")));
+        assertEquals(ErrorCodeConstants.FORBIDDEN, ex.getCode());
+    }
+
+    @Test
+    void shouldForbidAddTaskLogWhenNotOwnerOrCreator() {
+        TaskBoardEntity existing = new TaskBoardEntity();
+        existing.setId(1L);
+        existing.setOwnerUserId(2L);
+        existing.setCreatorUserId(3L);
+        existing.setSuggestedToUserId(4L);
+        when(taskBoardMapper.selectById(1L)).thenReturn(existing);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.addTaskLog(1L, new TaskLogCreateRequest("备注", "内容")));
+        assertEquals(ErrorCodeConstants.FORBIDDEN, ex.getCode());
     }
 }

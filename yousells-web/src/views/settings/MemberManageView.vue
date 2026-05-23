@@ -5,8 +5,8 @@ import PageSection from "@/components/app/PageSection.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
 import { RouteName } from "@/router/route-names";
-import { fetchUserList, createUser, updateUser } from "@/api/user";
-import type { UserListItem, CreateUserRequest, UpdateUserRequest } from "@/types/user";
+import { fetchUserList, createUser, updateUser, resignUser } from "@/api/user";
+import type { UserListItem, CreateUserRequest, UpdateUserRequest, ResignUserRequest } from "@/types/user";
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -18,6 +18,11 @@ const loading = ref(false);
 const dialogVisible = ref(false);
 const dialogMode = ref<"create" | "edit">("create");
 const editingUserId = ref<number | null>(null);
+
+const resignDialogVisible = ref(false);
+const resigningUser = ref<UserListItem | null>(null);
+const resignForm = reactive<ResignUserRequest>({ reason: "" });
+const resignFormRef = ref<FormInstance>();
 
 const formRef = ref<FormInstance>();
 const form = reactive<CreateUserRequest & { confirmPassword?: string }>({
@@ -141,6 +146,27 @@ async function handleSubmit() {
   }
 }
 
+function openResignDialog(user: UserListItem) {
+  resigningUser.value = user;
+  resignForm.reason = "";
+  resignDialogVisible.value = true;
+}
+
+async function handleResignSubmit() {
+  const valid = await resignFormRef.value?.validate().catch(() => false);
+  if (!valid) return;
+  if (!resigningUser.value) return;
+
+  try {
+    await resignUser(resigningUser.value.userId, { reason: resignForm.reason });
+    ElMessage.success("已办理离职");
+    resignDialogVisible.value = false;
+    await loadUsers();
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : "离职操作失败");
+  }
+}
+
 function getLevelTagType(level: string) {
   const map: Record<string, "success" | "warning" | "info" | "danger"> = {
     T0: "info",
@@ -192,15 +218,49 @@ onMounted(() => {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEditDialog(row)">
               编辑
+            </el-button>
+            <el-button link type="danger" size="small" @click="openResignDialog(row)">
+              离职
             </el-button>
           </template>
         </el-table-column>
       </el-table>
     </PageSection>
+
+    <el-dialog
+      v-model="resignDialogVisible"
+      title="办理离职"
+      width="480px"
+      destroy-on-close
+    >
+      <p v-if="resigningUser" class="mb-4">
+        确认办理 <strong>{{ resigningUser.realName }}</strong>（{{ resigningUser.username }}）的离职手续？
+      </p>
+      <el-form ref="resignFormRef" :model="resignForm" label-width="80px">
+        <el-form-item
+          label="离职原因"
+          prop="reason"
+          :rules="[{ required: true, message: '请填写离职原因', trigger: 'blur' }]"
+        >
+          <el-input
+            v-model="resignForm.reason"
+            type="textarea"
+            :rows="3"
+            placeholder="请填写离职原因（如：个人发展、合同到期等）"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="resignDialogVisible = false">取消</el-button>
+        <el-button type="danger" @click="handleResignSubmit">确认离职</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog
       v-model="dialogVisible"

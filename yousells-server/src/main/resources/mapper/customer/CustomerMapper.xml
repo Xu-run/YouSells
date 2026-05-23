@@ -20,9 +20,7 @@
         <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
-    <select id="pageCustomers" resultMap="customerMap">
-        SELECT c.*
-        FROM customers c
+    <sql id="customerQueryCondition">
         WHERE c.is_deleted = 0
         <if test="keyword != null and keyword != ''">
             AND c.real_name LIKE CONCAT('%', #{keyword}, '%')
@@ -52,6 +50,19 @@
                 #{uid}
             </foreach>)
         </if>
+    </sql>
+
+    <select id="pageCustomers" resultMap="customerMap">
+        SELECT c.*
+        FROM customers c
+        <include refid="customerQueryCondition"/>
+        ORDER BY c.updated_at DESC
+    </select>
+
+    <select id="listCustomers" resultMap="customerMap">
+        SELECT c.*
+        FROM customers c
+        <include refid="customerQueryCondition"/>
         ORDER BY c.updated_at DESC
     </select>
 
@@ -63,6 +74,26 @@
             #{id}
         </foreach>
         AND is_deleted = 0
+    </select>
+
+    <select id="selectSilentCustomers" resultMap="customerMap">
+        SELECT c.*
+        FROM customers c
+        WHERE c.is_deleted = 0
+          AND NOT EXISTS (
+              SELECT 1 FROM customer_follow_ups f
+              WHERE f.customer_id = c.id
+                AND f.is_deleted = 0
+                AND f.created_at &gt; #{deadline}
+          )
+          AND c.created_at &lt; #{deadline}
+          <if test="visibleUserIds != null and visibleUserIds.size() &gt; 0">
+            AND (c.owner_user_id IN
+              <foreach collection="visibleUserIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+              OR c.inviter_user_id IN
+              <foreach collection="visibleUserIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+            )
+          </if>
     </select>
 
 </mapper>

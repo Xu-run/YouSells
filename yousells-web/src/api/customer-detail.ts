@@ -6,3 +6,10 @@ export async function fetchCustomerDetail(id: string | number): Promise<Customer
   const response = await request.get<ApiResponse<CustomerDetail>>(`/customers/${id}`);
   return response.data.data;
 }
+
+export async function updateCustomer(
+  id: string | number,
+  data: Partial<CustomerDetail> & { inviterUserId: number; ownerUserId: number }
+): Promise<void> {
+  await request.put<ApiResponse<null>>(`/customers/${id}`, data);
+}

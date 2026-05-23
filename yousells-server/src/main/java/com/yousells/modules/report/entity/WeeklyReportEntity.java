@@ -30,9 +30,7 @@ public class WeeklyReportEntity {
     private String convertedDetails;
     private String taskCompletedDetails;
 
-    @TableField(exist = false)
     private LocalDateTime createdAt;
-    @TableField(exist = false)
     private LocalDateTime updatedAt;
     @TableField(exist = false)
     private Long createdBy;

@@ -9,7 +9,10 @@ import {
   Document,
   ChatLineSquare,
   Setting,
-  UserFilled
+  UserFilled,
+  Trophy,
+  Bell,
+  Grid
 } from "@element-plus/icons-vue";
 
 const authStore = useAuthStore();
@@ -26,17 +29,22 @@ const mainItems: NavItem[] = [
   { name: RouteName.Dashboard, label: "首页看板", icon: House },
   { name: RouteName.CustomerList, label: "客户管理", icon: User },
   { name: RouteName.TaskBoard, label: "公共安排", icon: List },
-  { name: RouteName.DailyReport, label: "日报周报", icon: Document },
-  { name: RouteName.TopicList, label: "攻略区", icon: ChatLineSquare }
+  { name: RouteName.DailyReport, label: "个人报告", icon: Document },
+  { name: RouteName.ReportPlaza, label: "报告广场", icon: Grid },
+  { name: RouteName.TopicList, label: "攻略区", icon: ChatLineSquare },
+  { name: RouteName.Leaderboard, label: "战绩排行", icon: Trophy }
 ];
 
-const settingItems: NavItem[] = [
-  { name: RouteName.Profile, label: "个人设置", icon: Setting }
-];
-
-if (isT3.value) {
-  settingItems.push({ name: RouteName.MemberManage, label: "成员管理", icon: UserFilled });
-}
+const settingItems = computed<NavItem[]>(() => {
+  const items: NavItem[] = [
+    { name: RouteName.NotificationList, label: "消息中心", icon: Bell },
+    { name: RouteName.Profile, label: "个人设置", icon: Setting }
+  ];
+  if (isT3.value) {
+    items.push({ name: RouteName.MemberManage, label: "成员管理", icon: UserFilled });
+  }
+  return items;
+});
 </script>
 
 <template>

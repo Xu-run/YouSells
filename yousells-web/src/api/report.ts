@@ -4,7 +4,9 @@ import type {
   DailyReport,
   WeeklyReport,
   DailyReportCreateRequest,
-  WeeklyReportCreateRequest
+  WeeklyReportCreateRequest,
+  ReportPlazaItem,
+  ReportComment
 } from "@/types/report";
 
 // P1: GET /api/reports/daily?date=YYYY-MM-DD (required)
@@ -59,4 +61,50 @@ export async function createWeeklyReport(data: WeeklyReportCreateRequest): Promi
 // P1: PUT /api/reports/weekly/{id}
 export async function updateWeeklyReport(id: number, data: WeeklyReportCreateRequest): Promise<void> {
   await request.put<ApiResponse<null>>(`/reports/weekly/${id}`, data);
+}
+
+// Plaza: GET /api/reports/plaza?type=daily|weekly&userId=&page=&pageSize=
+export async function fetchReportPlaza(
+  type: "daily" | "weekly",
+  page = 1,
+  pageSize = 5,
+  userId?: number | null
+): Promise<PageResponse<ReportPlazaItem>> {
+  const response = await request.get<ApiResponse<PageResponse<ReportPlazaItem>>>("/reports/plaza", {
+    params: { type, page, pageSize, userId }
+  });
+  return response.data.data;
+}
+
+// Plaza: POST /api/reports/plaza/{reportType}/{reportId}/like
+export async function toggleReportLike(reportType: string, reportId: number): Promise<{ liked: boolean }> {
+  const response = await request.post<ApiResponse<{ liked: boolean }>>(`/reports/plaza/${reportType}/${reportId}/like`);
+  return response.data.data;
+}
+
+// Plaza: GET /api/reports/plaza/{reportType}/{reportId}/comments
+export async function fetchReportComments(
+  reportType: string,
+  reportId: number,
+  page = 1,
+  pageSize = 20
+): Promise<PageResponse<ReportComment>> {
+  const response = await request.get<ApiResponse<PageResponse<ReportComment>>>(
+    `/reports/plaza/${reportType}/${reportId}/comments`,
+    { params: { page, pageSize } }
+  );
+  return response.data.data;
+}
+
+// Plaza: POST /api/reports/plaza/{reportType}/{reportId}/comments
+export async function createReportComment(
+  reportType: string,
+  reportId: number,
+  content: string
+): Promise<number> {
+  const response = await request.post<ApiResponse<IdResponse>>(
+    `/reports/plaza/${reportType}/${reportId}/comments`,
+    { content }
+  );
+  return response.data.data.id;
 }

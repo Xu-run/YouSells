@@ -32,6 +32,7 @@ const emit = defineEmits<{
             {{ reportType === "daily" ? (item as DailyReport).reportDate : (item as WeeklyReport).weekKey }}
           </span>
           <span class="history-item__user">
+            {{ (item as DailyReport).userRealName || (item as WeeklyReport).userRealName }}
           </span>
         </div>
         <div class="history-item__body">

@@ -13,7 +13,9 @@ import java.util.List;
 @Mapper
 public interface FollowUpMapper extends BaseMapper<FollowUpEntity> {
 
-    IPage<FollowUpEntity> pageFollowUps(Page<?> page, @Param("customerId") Long customerId);
+    IPage<FollowUpEntity> pageFollowUps(Page<?> page,
+                                         @Param("customerId") Long customerId,
+                                         @Param("visibleUserIds") List<Long> visibleUserIds);
 
     List<UserDisplayName> selectUserDisplayNames(@Param("userIds") List<Long> userIds);
 

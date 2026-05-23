@@ -58,6 +58,9 @@ public class GlobalExceptionHandler {
         if (code == ErrorCodeConstants.UNAUTHORIZED) {
             return HttpStatus.UNAUTHORIZED;
         }
+        if (code == ErrorCodeConstants.FORBIDDEN) {
+            return HttpStatus.FORBIDDEN;
+        }
         if (code == ErrorCodeConstants.NOT_FOUND) {
             return HttpStatus.NOT_FOUND;
         }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Download, RefreshRight } from "@element-plus/icons-vue";
 import type { CustomerListItem } from "@/types/customer-list";
 
 defineProps<{
@@ -12,6 +13,8 @@ defineProps<{
 const emit = defineEmits<{
   (e: "page-change", page: number): void;
   (e: "row-click", row: CustomerListItem): void;
+  (e: "export"): void;
+  (e: "refresh"): void;
 }>();
 
 function intentTagType(intent: string): "success" | "warning" | "info" | "danger" {
@@ -37,6 +40,9 @@ function progressTagType(progress: string): "success" | "warning" | "info" {
       highlight-current-row
       @row-click="(row: CustomerListItem) => emit('row-click', row)"
     >
+      <template #empty>
+        <el-empty description="暂无客户数据" />
+      </template>
       <el-table-column prop="realName" label="姓名" width="100" />
       <el-table-column prop="grade" label="年级" width="80">
         <template #default="{ row }">
@@ -63,14 +69,53 @@ function progressTagType(progress: string): "success" | "warning" | "info" {
       <el-table-column prop="inviterDisplayName" label="邀约人" width="110" />
     </el-table>
 
-    <el-pagination
-      v-if="total > pageSize"
-      :current-page="page"
-      :page-size="pageSize"
-      :total="total"
-      layout="total, prev, pager, next"
-      style="margin-top: 16px; justify-content: flex-end"
-      @current-change="(p: number) => emit('page-change', p)"
-    />
+    <div class="table-bottom-bar">
+      <el-pagination
+        v-if="total > pageSize"
+        :current-page="page"
+        :page-size="pageSize"
+        :total="total"
+        layout="total, prev, pager, next"
+        @current-change="(p: number) => emit('page-change', p)"
+      />
+      <div class="table-bottom-bar__actions">
+        <el-tooltip content="导出 Excel" placement="top">
+          <el-button
+            text
+            circle
+            :icon="Download"
+            size="small"
+            @click="emit('export')"
+          />
+        </el-tooltip>
+        <el-tooltip content="刷新列表" placement="top">
+          <el-button
+            text
+            circle
+            :icon="RefreshRight"
+            size="small"
+            @click="emit('refresh')"
+          />
+        </el-tooltip>
+      </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.table-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.table-bottom-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+</style>

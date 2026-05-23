@@ -21,4 +21,54 @@
         AND updated_at BETWEEN #{start} AND #{end}
         AND (inviter_user_id = #{userId} OR owner_user_id = #{userId})
     </select>
+
+    <select id="countNewCustomersBatch" resultType="com.yousells.modules.report.vo.UserStatCount">
+        SELECT user_id as userId, COUNT(DISTINCT customer_id) as count FROM (
+            SELECT owner_user_id as user_id, id as customer_id FROM customers
+            WHERE is_deleted = 0 AND created_at BETWEEN #{start} AND #{end}
+            AND owner_user_id IN
+            <foreach collection="userIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+            UNION ALL
+            SELECT inviter_user_id as user_id, id as customer_id FROM customers
+            WHERE is_deleted = 0 AND created_at BETWEEN #{start} AND #{end}
+            AND inviter_user_id IN
+            <foreach collection="userIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        ) t
+        GROUP BY user_id
+    </select>
+
+    <select id="countFollowUpsBatch" resultType="com.yousells.modules.report.vo.UserStatCount">
+        SELECT user_id as userId, COUNT(*) as count
+        FROM customer_follow_ups
+        WHERE is_deleted = 0 AND created_at BETWEEN #{start} AND #{end}
+        AND user_id IN
+        <foreach collection="userIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        GROUP BY user_id
+    </select>
+
+    <select id="countCompletedTasksBatch" resultType="com.yousells.modules.report.vo.UserStatCount">
+        SELECT owner_user_id as userId, COUNT(*) as count
+        FROM task_boards
+        WHERE is_deleted = 0 AND status = '已完成' AND updated_at BETWEEN #{start} AND #{end}
+        AND owner_user_id IN
+        <foreach collection="userIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        GROUP BY owner_user_id
+    </select>
+
+    <select id="countConvertedCustomersBatch" resultType="com.yousells.modules.report.vo.UserStatCount">
+        SELECT user_id as userId, COUNT(DISTINCT customer_id) as count FROM (
+            SELECT owner_user_id as user_id, id as customer_id FROM customers
+            WHERE is_deleted = 0 AND progress = '课程' AND intent = '很稳'
+            AND updated_at BETWEEN #{start} AND #{end}
+            AND owner_user_id IN
+            <foreach collection="userIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+            UNION ALL
+            SELECT inviter_user_id as user_id, id as customer_id FROM customers
+            WHERE is_deleted = 0 AND progress = '课程' AND intent = '很稳'
+            AND updated_at BETWEEN #{start} AND #{end}
+            AND inviter_user_id IN
+            <foreach collection="userIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        ) t
+        GROUP BY user_id
+    </select>
 </mapper>

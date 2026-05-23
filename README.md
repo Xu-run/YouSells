@@ -13,21 +13,39 @@
 
 ## 当前项目状态
 
-截至 `2026-05-19`，当前已经明确的方向是：
+截至 `2026-05-23`，当前已完成 **P0 主流程 + P2.5 报告广场 + 两轮 Code Review + Bug Fix Sprint + 性能优化**：
 
 - 项目名称：`YouSells`
 - 目标用户：团队内部成员与管理员
 - 目标使用人数：`50-100`
 - 项目形态：正式部署上线的内部 Web 平台
 - 开发模式：`5 人开发团队`
-- 第一阶段重点：先做 `P0`，先把主流程跑通
+- 当前阶段：**P0/P2.5 功能已上线，安全加固与性能优化已完成，具备交付条件**
 
-当前代码层已经落地的基础设施：
+### 已落地的功能模块
+- **客户管理**：客户 CRUD、批量导入/导出、跟进记录、数据范围过滤（仅自己+下属）
+- **任务看板**：任务 CRUD、状态流转、任务日志、权限控制（创建人/执行人）
+- **报告广场**：日报/周报 Feed 流、点赞、评论
+- **话题区**：话题 CRUD、回复、最佳方案标记
+- **排行榜**：周度统计（新客户/跟进/成交/任务）
+- **通知中心**：WebSocket 实时推送 + 轮询兜底
+- **用户管理**：T3 管理员创建/修改/离职成员
 
-- `yousells-server`：Spring Boot 后端骨架、JWT Bearer Token 鉴权基线、统一响应/异常处理、P0 模块接口占位、基础接口测试
-- `yousells-web`：Vue 3 前端骨架、登录页、主布局、路由守卫、认证 store、API 请求层、P0 页面占位与示例数据联动
-- `yousells-server/src/main/resources/db`：P0 数据库建表脚本与初始化种子数据
-- `docker-compose.yml`：MySQL + Redis 本地开发依赖基线
+### 质量基线
+- **后端测试**：186 tests, 0 failures, 0 errors
+- **前端构建**：✓ pass
+- **安全审计**：2 轮 Code Review，修复越权漏洞 7 处、配置泄露 3 处、PII 日志 1 处
+- **性能优化**：Leaderboard N+1 消除（4N+1 → 5 查询）、DataScopeHelper 5 分钟缓存
+
+### 已知限制（Roadmap）
+- JWT 无状态登出暂未实现 Token 黑名单（当前依赖客户端清除 + 短期 Token）
+- Dashboard 统计在超大数据量下仍有内存聚合压力（当前 5 人团队场景无影响）
+- 前端 echarts/element-plus chunk 超过 500KB（功能正常，后续可做代码分割）
+
+### 部署就绪
+- `docker-compose.yml` + `deploy.sh` 一键部署
+- `application-prod.yml` 生产配置（无密码 fallback + HikariCP 连接池）
+- Nginx 反代 + SPA fallback + 安全头配置
 
 ## 当前定下来的技术方向
 

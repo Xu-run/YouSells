@@ -117,4 +117,46 @@ class FollowUpServiceTest {
                 .extracting("code")
                 .isEqualTo(ErrorCodeConstants.NOT_FOUND);
     }
+
+    @Test
+    void shouldFilterFollowUpsByVisibleCustomerScope() {
+        CustomerEntity c2 = new CustomerEntity();
+        c2.setRealName("张同学");
+        c2.setGrade("大二");
+        c2.setMajor("软件工程");
+        c2.setClassName("软工2301");
+        c2.setInviterUserId(99L); // Different user, not visible to current user
+        c2.setOwnerUserId(99L);
+        c2.setProgress("职规");
+        c2.setIntent("观望");
+        customerMapper.insert(c2);
+
+        FollowUpCreateRequest req1 = new FollowUpCreateRequest(
+                customerId, "职规", "第一次沟通", "感兴趣", "发资料");
+        followUpService.createFollowUp(req1);
+
+        FollowUpCreateRequest req2 = new FollowUpCreateRequest(
+                c2.getId(), "技术栈", "第二次沟通", "确定方向", "发课程方案");
+        assertThatThrownBy(() -> followUpService.createFollowUp(req2))
+                .isInstanceOf(BusinessException.class)
+                .extracting("code")
+                .isEqualTo(ErrorCodeConstants.FORBIDDEN);
+
+        PageResponse<FollowUpVo> result = followUpService.pageFollowUps(
+                new FollowUpQueryRequest(null, 1, 10));
+        assertThat(result.total()).isEqualTo(1);
+        assertThat(result.list().get(0).customerId()).isEqualTo(customerId);
+    }
+
+    @Test
+    void shouldReturnEmptyWhenNoVisibleCustomers() {
+        LoginUser orphanUser = new LoginUser(999L, "orphan", "孤儿", "T0", null);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(orphanUser, null, List.of()));
+
+        PageResponse<FollowUpVo> result = followUpService.pageFollowUps(
+                new FollowUpQueryRequest(null, 1, 10));
+        assertThat(result.total()).isEqualTo(0);
+        assertThat(result.list()).isEmpty();
+    }
 }

@@ -8,6 +8,7 @@ import lombok.Data;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -22,7 +23,18 @@ public interface CustomerMapper extends BaseMapper<CustomerEntity> {
                                         @Param("ownerUserId") Long ownerUserId,
                                         @Param("visibleUserIds") List<Long> visibleUserIds);
 
+    List<CustomerEntity> listCustomers(@Param("keyword") String keyword,
+                                       @Param("grade") String grade,
+                                       @Param("major") String major,
+                                       @Param("progress") String progress,
+                                       @Param("intent") String intent,
+                                       @Param("ownerUserId") Long ownerUserId,
+                                       @Param("visibleUserIds") List<Long> visibleUserIds);
+
     List<UserDisplayName> selectUserDisplayNames(@Param("userIds") List<Long> userIds);
+
+    List<CustomerEntity> selectSilentCustomers(@Param("deadline") LocalDateTime deadline,
+                                               @Param("visibleUserIds") List<Long> visibleUserIds);
 
     @Data
     class UserDisplayName {

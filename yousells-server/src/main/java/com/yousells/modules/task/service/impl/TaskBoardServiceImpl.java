@@ -6,9 +6,12 @@ import com.yousells.common.constant.ErrorCodeConstants;
 import com.yousells.common.exception.BusinessException;
 import com.yousells.common.response.PageResponse;
 import com.yousells.common.security.DataScopeHelper;
+import com.yousells.common.constant.NotificationTypeConstants;
 import com.yousells.common.security.LoginUser;
 import com.yousells.common.security.SecurityUserContext;
 import com.yousells.modules.auth.mapper.UserMapper;
+import com.yousells.modules.notification.entity.NotificationEntity;
+import com.yousells.modules.notification.service.NotificationService;
 import com.yousells.modules.task.convert.TaskBoardConvert;
 import com.yousells.modules.task.dto.TaskCreateRequest;
 import com.yousells.modules.task.dto.TaskLogCreateRequest;
@@ -25,6 +28,7 @@ import com.yousells.modules.task.vo.TaskDetailVo;
 import com.yousells.modules.task.vo.TaskDetailWithLogsVo;
 import com.yousells.modules.task.vo.TaskLogVo;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -45,13 +49,16 @@ public class TaskBoardServiceImpl implements TaskBoardService {
     private final TaskBoardMapper taskBoardMapper;
     private final TaskLogMapper taskLogMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
 
     public TaskBoardServiceImpl(TaskBoardMapper taskBoardMapper,
                                 TaskLogMapper taskLogMapper,
-                                UserMapper userMapper) {
+                                UserMapper userMapper,
+                                NotificationService notificationService) {
         this.taskBoardMapper = taskBoardMapper;
         this.taskLogMapper = taskLogMapper;
         this.userMapper = userMapper;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -90,23 +97,51 @@ public class TaskBoardServiceImpl implements TaskBoardService {
         if (detail == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "task not found");
         }
+        List<Long> visibleOwnerIds = resolveVisibleOwnerIds();
+        LoginUser currentUser = SecurityUserContext.requireCurrentUser();
+        if (!visibleOwnerIds.contains(detail.ownerUserId()) && !currentUser.userId().equals(detail.creatorUserId())) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "无权查看该任务");
+        }
         List<TaskLogVo> logs = taskLogMapper.selectByTaskId(id);
         return new TaskDetailWithLogsVo(detail, logs);
     }
 
     @Override
+    @Transactional
     public Long createTask(TaskCreateRequest request) {
         LoginUser user = SecurityUserContext.requireCurrentUser();
+        List<Long> visibleUserIds = resolveVisibleOwnerIds();
+        if (!visibleUserIds.contains(request.ownerUserId())) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "指定的执行人不在可操作范围内");
+        }
         TaskBoardEntity entity = TaskBoardConvert.toEntity(request, user.userId());
         taskBoardMapper.insert(entity);
+
+        // 通知任务执行人
+        if (!entity.getOwnerUserId().equals(user.userId())) {
+            NotificationEntity notification = new NotificationEntity();
+            notification.setUserId(entity.getOwnerUserId());
+            notification.setType(NotificationTypeConstants.TASK_ASSIGNED);
+            notification.setTitle("新任务指派");
+            notification.setContent("「" + user.realName() + "」给你指派了新任务：" + entity.getTaskTitle());
+            notification.setBusinessType("task");
+            notification.setBusinessId(entity.getId());
+            notificationService.sendNotification(notification);
+        }
+
         return entity.getId();
     }
 
     @Override
+    @Transactional
     public void updateTaskStatus(Long id, TaskStatusUpdateRequest request) {
         TaskBoardEntity entity = taskBoardMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "task not found");
+        }
+        LoginUser currentUser = SecurityUserContext.requireCurrentUser();
+        if (!currentUser.userId().equals(entity.getOwnerUserId()) && !currentUser.userId().equals(entity.getCreatorUserId())) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "无权修改该任务状态");
         }
         String oldStatus = entity.getStatus();
         String newStatus = request.status();
@@ -121,6 +156,19 @@ public class TaskBoardServiceImpl implements TaskBoardService {
         log.setFromStatus(oldStatus);
         log.setToStatus(newStatus);
         taskLogMapper.insert(log);
+
+        // 通知任务创建人（如果创建人不是当前操作人）
+        Long creatorId = entity.getCreatorUserId();
+        if (creatorId != null && !creatorId.equals(user.userId())) {
+            NotificationEntity notification = new NotificationEntity();
+            notification.setUserId(creatorId);
+            notification.setType(NotificationTypeConstants.TASK_STATUS_CHANGED);
+            notification.setTitle("任务状态变更");
+            notification.setContent("你创建的任务「" + entity.getTaskTitle() + "」状态从「" + oldStatus + "」变更为「" + newStatus + "」");
+            notification.setBusinessType("task");
+            notification.setBusinessId(entity.getId());
+            notificationService.sendNotification(notification);
+        }
     }
 
     @Override
@@ -130,6 +178,9 @@ public class TaskBoardServiceImpl implements TaskBoardService {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "task not found");
         }
         LoginUser user = SecurityUserContext.requireCurrentUser();
+        if (!user.userId().equals(entity.getOwnerUserId()) && !user.userId().equals(entity.getCreatorUserId())) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "无权操作该任务");
+        }
         TaskLogEntity log = new TaskLogEntity();
         log.setTaskId(id);
         log.setUserId(user.userId());

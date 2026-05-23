@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
+import { onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { ArrowLeft } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import PageSection from "@/components/app/PageSection.vue";
 import { stageLabel, followTypeLabel } from "@/constants/stage";
@@ -16,6 +17,7 @@ import type { CustomerDetail } from "@/types/customer-detail";
 import type { FollowUpRecord } from "@/types/followup";
 
 const route = useRoute();
+const router = useRouter();
 const loading = ref(false);
 const detail = ref<CustomerDetail | null>(null);
 const followUps = ref<FollowUpRecord[]>([]);
@@ -52,6 +54,12 @@ async function onFollowUpCreated() {
 onMounted(() => {
   void loadData();
 });
+
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId !== oldId && newId) {
+    void loadData();
+  }
+});
 </script>
 
 <template>
@@ -63,6 +71,17 @@ onMounted(() => {
       <template #extra>
         <el-button :loading="loading" @click="loadData">刷新详情</el-button>
       </template>
+
+      <div style="margin-bottom: 8px">
+        <el-button
+          text
+          type="primary"
+          :icon="ArrowLeft"
+          @click="router.push({ path: '/customers' })"
+        >
+          返回客户列表
+        </el-button>
+      </div>
 
       <div v-if="detail" class="customer-detail-grid">
         <div class="customer-detail-grid__left">

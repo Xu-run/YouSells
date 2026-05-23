@@ -33,6 +33,10 @@ async function loadDetail() {
   loading.value = true;
   try {
     const id = String(route.params.id);
+    if (!/^\d+$/.test(id)) {
+      notFound.value = true;
+      return;
+    }
     const data = await fetchTopicDetail(id);
     topic.value = data;
   } catch (e) {
@@ -151,7 +155,7 @@ onMounted(() => {
         <div class="reply-section">
           <h3 class="section-title">
             回答
-            <span v-if="topic.replies.length > 0" class="reply-count">({{ topic.replies.length }})</span>
+            <span v-if="(topic.replies?.length ?? 0) > 0" class="reply-count">({{ topic.replies.length }})</span>
           </h3>
           <TopicReplyList
             :replies="topic.replies"

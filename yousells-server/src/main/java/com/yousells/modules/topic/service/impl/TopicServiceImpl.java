@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yousells.common.constant.ErrorCodeConstants;
+import com.yousells.common.constant.NotificationTypeConstants;
 import com.yousells.common.exception.BusinessException;
 import com.yousells.common.response.PageResponse;
 import com.yousells.common.security.SecurityUserContext;
@@ -17,12 +18,15 @@ import com.yousells.modules.topic.dto.TopicReplyCreateRequest;
 import com.yousells.modules.topic.entity.TopicEntity;
 import com.yousells.modules.topic.entity.TopicReplyEntity;
 import com.yousells.modules.topic.mapper.TopicMapper;
+import com.yousells.modules.notification.entity.NotificationEntity;
+import com.yousells.modules.notification.service.NotificationService;
 import com.yousells.modules.topic.mapper.TopicReplyMapper;
 import com.yousells.modules.topic.service.TopicService;
 import com.yousells.modules.topic.vo.TopicDetailVo;
 import com.yousells.modules.topic.vo.TopicListItemVo;
 import com.yousells.modules.topic.vo.TopicReplyVo;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,13 +41,16 @@ public class TopicServiceImpl implements TopicService {
     private final TopicMapper topicMapper;
     private final TopicReplyMapper topicReplyMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
 
     public TopicServiceImpl(TopicMapper topicMapper,
                             TopicReplyMapper topicReplyMapper,
-                            UserMapper userMapper) {
+                            UserMapper userMapper,
+                            NotificationService notificationService) {
         this.topicMapper = topicMapper;
         this.topicReplyMapper = topicReplyMapper;
         this.userMapper = userMapper;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -106,6 +113,7 @@ public class TopicServiceImpl implements TopicService {
     }
 
     @Override
+    @Transactional
     public Long createReply(Long topicId, TopicReplyCreateRequest request) {
         TopicEntity topic = topicMapper.selectById(topicId);
         if (topic == null) {
@@ -117,6 +125,20 @@ public class TopicServiceImpl implements TopicService {
         topicReplyMapper.insert(entity);
 
         topicMapper.updateById(topic);
+
+        // 通知提问人（如果不是自己回答的）
+        Long authorId = topic.getAuthorUserId();
+        if (!authorId.equals(userId)) {
+            NotificationEntity notification = new NotificationEntity();
+            notification.setUserId(authorId);
+            notification.setType(NotificationTypeConstants.TOPIC_REPLIED);
+            notification.setTitle("攻略区新回答");
+            UserEntity replyUser = userMapper.selectById(userId);
+            notification.setContent("「" + (replyUser != null ? replyUser.getRealName() : "有人") + "」回答了你的问题「" + topic.getTitle() + "」");
+            notification.setBusinessType("topic");
+            notification.setBusinessId(topicId);
+            notificationService.sendNotification(notification);
+        }
 
         return entity.getId();
     }
@@ -138,6 +160,7 @@ public class TopicServiceImpl implements TopicService {
     }
 
     @Override
+    @Transactional
     public void markBestSolution(Long topicId, Long replyId) {
         TopicEntity topic = topicMapper.selectById(topicId);
         if (topic == null) {

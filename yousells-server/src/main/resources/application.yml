@@ -2,7 +2,7 @@ spring:
   application:
     name: yousells-server
   profiles:
-    default: dev
+    active: dev
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:13306}/${MYSQL_DATABASE:yousells}?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai
     username: ${MYSQL_USERNAME:root}
@@ -35,7 +35,7 @@ app:
   cors:
     allowed-origins: ${WEB_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
   jwt:
-    secret: ${JWT_SECRET:VGhpc0lzQVRlc3RTZWNyZXRLZXlGb3JZb3VTZWxsc0pXVEF1dGg0NTY3ODkwMTIzNA==}
+    secret: ${JWT_SECRET}
     access-token-expire-seconds: ${JWT_ACCESS_TOKEN_EXPIRE_SECONDS:43200}
     issuer: ${JWT_ISSUER:yousells-server}
 

@@ -16,13 +16,24 @@
     </resultMap>
 
     <select id="pageFollowUps" resultMap="followUpMap">
-        SELECT *
-        FROM customer_follow_ups
-        WHERE is_deleted = 0
+        SELECT fu.*
+        FROM customer_follow_ups fu
+        JOIN customers c ON fu.customer_id = c.id AND c.is_deleted = 0
+        WHERE fu.is_deleted = 0
         <if test="customerId != null">
-            AND customer_id = #{customerId}
+            AND fu.customer_id = #{customerId}
         </if>
-        ORDER BY created_at DESC
+        <if test="visibleUserIds != null and visibleUserIds.size() > 0">
+            AND (c.owner_user_id IN
+            <foreach collection="visibleUserIds" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+            OR c.inviter_user_id IN
+            <foreach collection="visibleUserIds" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>)
+        </if>
+        ORDER BY fu.created_at DESC
     </select>
 
     <select id="selectUserDisplayNames" resultType="com.yousells.modules.followup.mapper.FollowUpMapper$UserDisplayName">

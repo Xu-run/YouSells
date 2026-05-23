@@ -67,10 +67,36 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    public List<CustomerListItemVo> listAllCustomers(CustomerQueryRequest request) {
+        List<Long> visibleUserIds = resolveVisibleUserIds();
+
+        List<CustomerEntity> entities = customerMapper.listCustomers(
+                request.keyword(), request.grade(), request.major(),
+                request.progress(), request.intent(), request.ownerUserId(),
+                visibleUserIds);
+
+        if (entities.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, String> displayNameMap = buildDisplayNameMap(entities);
+
+        return entities.stream()
+                .map(e -> CustomerConvert.toListItemVo(e,
+                        displayNameMap.getOrDefault(e.getOwnerUserId(), ""),
+                        displayNameMap.getOrDefault(e.getInviterUserId(), "")))
+                .toList();
+    }
+
+    @Override
     public CustomerDetailVo getCustomerDetail(Long id) {
         CustomerEntity entity = customerMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "customer not found");
+        }
+        List<Long> visibleUserIds = resolveVisibleUserIds();
+        if (!visibleUserIds.contains(entity.getOwnerUserId()) && !visibleUserIds.contains(entity.getInviterUserId())) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "无权查看该客户");
         }
 
         String ownerDisplayName = lookupDisplayName(entity.getOwnerUserId());
@@ -81,6 +107,19 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Long createCustomer(CustomerCreateRequest request) {
+        LoginUser currentUser = SecurityUserContext.requireCurrentUser();
+        List<Long> visibleUserIds = resolveVisibleUserIds();
+
+        Long ownerUserId = request.ownerUserId() != null ? request.ownerUserId() : currentUser.userId();
+        Long inviterUserId = request.inviterUserId() != null ? request.inviterUserId() : currentUser.userId();
+
+        if (!visibleUserIds.contains(ownerUserId)) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "指定的归属人不在可操作范围内");
+        }
+        if (!visibleUserIds.contains(inviterUserId)) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "指定的邀约人不在可操作范围内");
+        }
+
         CustomerEntity entity = CustomerConvert.toEntity(request);
         customerMapper.insert(entity);
         return entity.getId();
@@ -91,6 +130,10 @@ public class CustomerServiceImpl implements CustomerService {
         CustomerEntity entity = customerMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "customer not found");
+        }
+        List<Long> visibleUserIds = resolveVisibleUserIds();
+        if (!visibleUserIds.contains(entity.getOwnerUserId()) && !visibleUserIds.contains(entity.getInviterUserId())) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "无权修改该客户");
         }
         CustomerConvert.updateEntity(entity, request);
         customerMapper.updateById(entity);

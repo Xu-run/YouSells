@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     level VARCHAR(4) NOT NULL DEFAULT 'T0',
     manager_user_id BIGINT NULL,
     status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+    resign_reason VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT NULL,
@@ -21,11 +22,14 @@ CREATE TABLE IF NOT EXISTS customers (
     grade VARCHAR(16) NOT NULL,
     major VARCHAR(128) NOT NULL,
     class_name VARCHAR(64) NULL,
+    phone VARCHAR(20) NULL,
+    wechat VARCHAR(64) NULL,
     inviter_user_id BIGINT NOT NULL,
     owner_user_id BIGINT NOT NULL,
     progress VARCHAR(16) NOT NULL DEFAULT '职规',
     intent VARCHAR(8) NOT NULL DEFAULT '观望',
     inviter_note TEXT NULL,
+    source_channel VARCHAR(32) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT NULL,
@@ -146,3 +150,55 @@ CREATE TABLE IF NOT EXISTS operation_logs (
     operation_detail TEXT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(32) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NULL,
+    business_type VARCHAR(32) NULL,
+    business_id BIGINT NULL,
+    is_read INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT NULL,
+    updated_by BIGINT NULL,
+    is_deleted INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS report_likes (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    report_type VARCHAR(8) NOT NULL,
+    report_id BIGINT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, report_type, report_id)
+);
+
+CREATE TABLE IF NOT EXISTS report_comments (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    report_type VARCHAR(8) NOT NULL,
+    report_id BIGINT NOT NULL,
+    content VARCHAR(500) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INT NOT NULL DEFAULT 0
+);
+
+DELETE FROM notifications;
+DELETE FROM operation_logs;
+DELETE FROM weekly_reports;
+DELETE FROM daily_reports;
+DELETE FROM task_logs;
+DELETE FROM task_boards;
+DELETE FROM customer_follow_ups;
+DELETE FROM customers;
+DELETE FROM users;
+
+INSERT INTO users (id, username, password_hash, real_name, level, manager_user_id, status)
+VALUES
+    (1, 'admin', '$2a$10$tZJK87gM16/lFCEW8f36uen8t2dbOHAFA0a6jKdxUAOBMO2pI72p6', '秦梓源', 'T2', NULL, 'ACTIVE'),
+    (2, 'member', '$2a$10$FVamKOa8CyTGdDWBeGd04emjcWCIWEwJgFU.lsGDlHA8qE5SSZ4oa', '小赵', 'T0', 1, 'ACTIVE');

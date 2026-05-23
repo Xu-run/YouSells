@@ -26,9 +26,7 @@ public class DailyReportEntity {
     private String progressDetails;
     private String taskCompletedDetails;
 
-    @TableField(exist = false)
     private LocalDateTime createdAt;
-    @TableField(exist = false)
     private LocalDateTime updatedAt;
     @TableField(exist = false)
     private Long createdBy;

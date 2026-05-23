@@ -39,3 +39,7 @@ export interface UpdateUserRequest {
   managerUserId?: number | null;
   status?: string;
 }
+
+export interface ResignUserRequest {
+  reason: string;
+}

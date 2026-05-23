@@ -3,3 +3,9 @@ spring:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:13306}/${MYSQL_DATABASE:yousells}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
+
+app:
+  jwt:
+    secret: VGhpc0lzQURldlNlY3JldEtleUZvcllvdVNlbGxzSldUQXV0aDEyMzQ1Njc4OTA=
+    access-token-expire-seconds: 43200
+    issuer: yousells-server

@@ -86,14 +86,19 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public void updateDailyReport(Long id, DailyReportCreateRequest request) {
+        LoginUser user = SecurityUserContext.requireCurrentUser();
         DailyReportEntity entity = dailyReportMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "daily report not found");
         }
-        if (!entity.getReportDate().equals(LocalDate.now())) {
+        if (entity.getUserId() != null && !entity.getUserId().equals(user.userId())) {
+            throw new BusinessException(ErrorCodeConstants.STATUS_CONFLICT, "只能修改自己的日报");
+        }
+        if (entity.getUserId() == null && !entity.getReportDate().equals(LocalDate.now())) {
             throw new BusinessException(ErrorCodeConstants.STATUS_CONFLICT, "只能修改当天的日报");
         }
         ReportConvert.applyDailyUpdate(entity, request);
+        entity.setUpdatedAt(LocalDateTime.now());
         dailyReportMapper.updateById(entity);
     }
 
@@ -136,16 +141,23 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public void updateWeeklyReport(Long id, WeeklyReportCreateRequest request) {
+        LoginUser user = SecurityUserContext.requireCurrentUser();
         WeeklyReportEntity entity = weeklyReportMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "weekly report not found");
         }
-        WeekRange range = ReportConvert.resolveWeekRange(request.weekKey());
-        LocalDate today = LocalDate.now();
-        if (today.isBefore(range.weekStart()) || today.isAfter(range.weekEnd())) {
-            throw new BusinessException(ErrorCodeConstants.STATUS_CONFLICT, "只能修改本周的周报");
+        if (entity.getUserId() != null && !entity.getUserId().equals(user.userId())) {
+            throw new BusinessException(ErrorCodeConstants.STATUS_CONFLICT, "只能修改自己的周报");
+        }
+        if (entity.getUserId() == null) {
+            WeekRange range = ReportConvert.resolveWeekRange(request.weekKey());
+            LocalDate today = LocalDate.now();
+            if (today.isBefore(range.weekStart()) || today.isAfter(range.weekEnd())) {
+                throw new BusinessException(ErrorCodeConstants.STATUS_CONFLICT, "只能修改本周的周报");
+            }
         }
         ReportConvert.applyWeeklyUpdate(entity, request);
+        entity.setUpdatedAt(LocalDateTime.now());
         weeklyReportMapper.updateById(entity);
     }
 

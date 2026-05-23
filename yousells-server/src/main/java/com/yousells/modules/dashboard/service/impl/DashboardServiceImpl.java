@@ -1,6 +1,13 @@
 package com.yousells.modules.dashboard.service.impl;
 
+import com.yousells.common.constant.BusinessConstants;
+import com.yousells.common.security.DataScopeHelper;
+import com.yousells.common.security.LoginUser;
+import com.yousells.common.security.SecurityUserContext;
+import com.yousells.modules.auth.mapper.UserMapper;
 import com.yousells.modules.customer.dto.CustomerQueryRequest;
+import com.yousells.modules.customer.entity.CustomerEntity;
+import com.yousells.modules.customer.mapper.CustomerMapper;
 import com.yousells.modules.customer.service.CustomerService;
 import com.yousells.modules.customer.vo.CustomerListItemVo;
 import com.yousells.modules.dashboard.service.DashboardService;
@@ -10,7 +17,6 @@ import com.yousells.modules.dashboard.vo.DashboardTaskReminderVo;
 import com.yousells.modules.dashboard.vo.IntentDistributionItem;
 import com.yousells.modules.dashboard.vo.ProgressDistributionItem;
 import com.yousells.modules.dashboard.vo.TrendDataPoint;
-import com.yousells.common.constant.BusinessConstants;
 import com.yousells.modules.task.dto.TaskQueryRequest;
 import com.yousells.modules.task.service.TaskBoardService;
 import com.yousells.modules.task.vo.TaskBoardItemVo;
@@ -18,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -31,18 +38,26 @@ public class DashboardServiceImpl implements DashboardService {
     private static final int DASHBOARD_FETCH_SIZE = 1000;
     private static final int TASK_REMINDER_LIMIT = 5;
     private static final int FOCUS_CUSTOMER_LIMIT = 5;
+    private static final int SILENT_CUSTOMER_LIMIT = 5;
+    private static final int SILENT_CUSTOMER_DAYS = 3;
     private static final int RECENT_CUSTOMER_DAYS = 7;
     private static final int TREND_DAYS = 30;
 
     private final CustomerService customerService;
     private final TaskBoardService taskBoardService;
+    private final CustomerMapper customerMapper;
+    private final UserMapper userMapper;
     private final Clock clock;
 
     public DashboardServiceImpl(CustomerService customerService,
                                 TaskBoardService taskBoardService,
+                                CustomerMapper customerMapper,
+                                UserMapper userMapper,
                                 Clock clock) {
         this.customerService = customerService;
         this.taskBoardService = taskBoardService;
+        this.customerMapper = customerMapper;
+        this.userMapper = userMapper;
         this.clock = clock;
     }
 
@@ -63,7 +78,8 @@ public class DashboardServiceImpl implements DashboardService {
                 buildIntentDistribution(customers),
                 buildTrendData(customers, today),
                 buildTaskReminders(tasks),
-                buildFocusCustomers(customers)
+                buildFocusCustomers(customers),
+                buildSilentCustomers()
         );
     }
 
@@ -198,6 +214,27 @@ public class DashboardServiceImpl implements DashboardService {
                         customer.realName(),
                         customer.intent(),
                         customer.progress(),
+                        null
+                ))
+                .toList();
+    }
+
+    private List<DashboardCustomerReminderVo> buildSilentCustomers() {
+        LoginUser currentUser = SecurityUserContext.getCurrentUser();
+        if (currentUser == null) {
+            return List.of();
+        }
+        List<Long> visibleUserIds = DataScopeHelper.getSubordinateIds(currentUser.userId(), userMapper);
+        visibleUserIds.add(currentUser.userId());
+        LocalDateTime deadline = LocalDateTime.now(clock).minusDays(SILENT_CUSTOMER_DAYS);
+        List<CustomerEntity> silentCustomers = customerMapper.selectSilentCustomers(deadline, visibleUserIds);
+        return silentCustomers.stream()
+                .limit(SILENT_CUSTOMER_LIMIT)
+                .map(c -> new DashboardCustomerReminderVo(
+                        c.getId(),
+                        c.getRealName(),
+                        c.getIntent(),
+                        c.getProgress(),
                         null
                 ))
                 .toList();

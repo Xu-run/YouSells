@@ -1,7 +1,9 @@
 package com.yousells.modules.dashboard;
 
 import com.yousells.common.response.PageResponse;
+import com.yousells.modules.auth.mapper.UserMapper;
 import com.yousells.modules.customer.dto.CustomerQueryRequest;
+import com.yousells.modules.customer.mapper.CustomerMapper;
 import com.yousells.modules.customer.service.CustomerService;
 import com.yousells.modules.customer.vo.CustomerListItemVo;
 import com.yousells.modules.dashboard.service.impl.DashboardServiceImpl;
@@ -28,6 +30,8 @@ class DashboardAggregationTest {
     void shouldAggregateOverviewFromCustomerAndTaskModules() {
         CustomerService customerService = mock(CustomerService.class);
         TaskBoardService taskBoardService = mock(TaskBoardService.class);
+        CustomerMapper customerMapper = mock(CustomerMapper.class);
+        UserMapper userMapper = mock(UserMapper.class);
         Clock fixedClock = Clock.fixed(Instant.parse("2026-05-19T04:00:00Z"), ZoneId.of("Asia/Shanghai"));
 
         when(customerService.pageCustomers(any(CustomerQueryRequest.class))).thenReturn(PageResponse.of(List.of(
@@ -42,7 +46,7 @@ class DashboardAggregationTest {
         when(taskBoardService.pageTasks(any(TaskQueryRequest.class))).thenReturn(PageResponse.of(List.of(), 1, 1000, 0));
 
         DashboardServiceImpl dashboardService = new DashboardServiceImpl(
-                customerService, taskBoardService, fixedClock);
+                customerService, taskBoardService, customerMapper, userMapper, fixedClock);
 
         DashboardOverviewVo overview = dashboardService.getOverview();
 

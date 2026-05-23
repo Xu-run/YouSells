@@ -10,10 +10,11 @@ const router = useRouter();
 const route = useRoute();
 
 const formRef = ref<FormInstance>();
+const isDev = import.meta.env.DEV;
 
 const form = reactive({
-  username: "admin",
-  password: "admin123"
+  username: import.meta.env.DEV ? "admin" : "",
+  password: import.meta.env.DEV ? "admin123" : ""
 });
 
 const rules: FormRules = {
@@ -67,7 +68,7 @@ async function handleSubmit() {
           <el-button type="primary" size="large" :loading="authStore.loading" :disabled="authStore.loading" @click="handleSubmit">
             登录 YouSells
           </el-button>
-          <div class="login-tips">
+          <div v-if="isDev" class="login-tips">
             演示账号：`admin / admin123`，`member / member123`
           </div>
         </el-form>

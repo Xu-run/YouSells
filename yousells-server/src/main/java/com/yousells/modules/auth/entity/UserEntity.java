@@ -21,4 +21,6 @@ public class UserEntity extends BaseEntity {
     private Long managerUserId;
 
     private String status;
+
+    private String resignReason;
 }

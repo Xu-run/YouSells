@@ -27,4 +27,10 @@ public class CustomerEntity extends BaseEntity {
     private String intent;
 
     private String inviterNote;
+
+    private String phone;
+
+    private String wechat;
+
+    private String sourceChannel;
 }

@@ -3,6 +3,7 @@ package com.yousells.modules.customer;
 import com.yousells.common.constant.ErrorCodeConstants;
 import com.yousells.common.exception.BusinessException;
 import com.yousells.common.response.PageResponse;
+import com.yousells.common.security.DataScopeHelper;
 import com.yousells.common.security.LoginUser;
 import com.yousells.modules.auth.entity.UserEntity;
 import com.yousells.modules.auth.mapper.UserMapper;
@@ -44,6 +45,7 @@ class CustomerServiceTest {
 
     @BeforeEach
     void setUp() {
+        DataScopeHelper.invalidateAllCache();
         UserEntity u1 = new UserEntity();
         u1.setUsername("admin");
         u1.setPasswordHash("hash");
@@ -259,5 +261,48 @@ class CustomerServiceTest {
                 new CustomerQueryRequest(null, null, null, null, null, null, 1, 10));
         assertThat(result.total()).isEqualTo(1);
         // T0 can see own inviter+owner customers
+    }
+
+    @Test
+    void shouldAllowGetCustomerDetailWhenOwnerOrInviter() {
+        // userId1 is inviter of customerId1
+        CustomerDetailVo detail = customerService.getCustomerDetail(customerId1);
+        assertThat(detail.id()).isEqualTo(customerId1);
+    }
+
+    @Test
+    void shouldAllowGetCustomerDetailWhenOwner() {
+        // userId1 is owner of customerId2
+        CustomerDetailVo detail = customerService.getCustomerDetail(customerId2);
+        assertThat(detail.id()).isEqualTo(customerId2);
+    }
+
+    @Test
+    void shouldForbidGetCustomerDetailForOutOfScope() {
+        // Switch to userId2 (T0) who is not owner/inviter of customerId2
+        LoginUser t0User = new LoginUser(userId2, "member", "小赵", "T0", userId1);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(t0User, null, List.of()));
+
+        assertThatThrownBy(() -> customerService.getCustomerDetail(customerId2))
+                .isInstanceOf(BusinessException.class)
+                .extracting("code")
+                .isEqualTo(ErrorCodeConstants.FORBIDDEN);
+    }
+
+    @Test
+    void shouldForbidUpdateCustomerForOutOfScope() {
+        // Switch to userId2 (T0) who is not owner/inviter of customerId2
+        LoginUser t0User = new LoginUser(userId2, "member", "小赵", "T0", userId1);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(t0User, null, List.of()));
+
+        CustomerUpdateRequest request = new CustomerUpdateRequest(
+                "非法修改", "大一", "测试", null, userId1, userId1, "职规", "观望", null);
+
+        assertThatThrownBy(() -> customerService.updateCustomer(customerId2, request))
+                .isInstanceOf(BusinessException.class)
+                .extracting("code")
+                .isEqualTo(ErrorCodeConstants.FORBIDDEN);
     }
 }

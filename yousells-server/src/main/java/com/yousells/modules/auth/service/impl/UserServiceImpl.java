@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yousells.common.constant.ErrorCodeConstants;
 import com.yousells.common.exception.BusinessException;
 import com.yousells.modules.auth.dto.CreateUserRequest;
+import com.yousells.modules.auth.dto.ResignUserRequest;
 import com.yousells.modules.auth.dto.UpdatePasswordRequest;
 import com.yousells.modules.auth.dto.UpdateProfileRequest;
 import com.yousells.modules.auth.dto.UpdateUserRequest;
@@ -11,9 +12,13 @@ import com.yousells.modules.auth.entity.UserEntity;
 import com.yousells.modules.auth.mapper.UserMapper;
 import com.yousells.modules.auth.service.UserService;
 import com.yousells.modules.auth.vo.UserListItemVo;
+import com.yousells.common.security.DataScopeHelper;
+import com.yousells.common.security.LoginUser;
+import com.yousells.common.security.SecurityUserContext;
 import com.yousells.modules.auth.vo.UserProfileVo;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -49,6 +54,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserProfileVo getUser(Long userId) {
+        LoginUser currentUser = SecurityUserContext.requireCurrentUser();
+        if (!currentUser.userId().equals(userId)) {
+            List<Long> subordinateIds = DataScopeHelper.getSubordinateIds(currentUser.userId(), userMapper);
+            if (!subordinateIds.contains(userId)) {
+                throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "无权查看该用户");
+            }
+        }
         UserEntity entity = userMapper.selectById(userId);
         if (entity == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "user not found");
@@ -81,10 +93,13 @@ public class UserServiceImpl implements UserService {
         }
         entity.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userMapper.updateById(entity);
+        DataScopeHelper.invalidateAllCache();
     }
 
     @Override
+    @Transactional
     public Long createUser(CreateUserRequest request) {
+        requireT3OrAdmin();
         UserEntity existing = userMapper.selectOne(
                 new LambdaQueryWrapper<UserEntity>()
                         .eq(UserEntity::getUsername, request.username())
@@ -100,11 +115,14 @@ public class UserServiceImpl implements UserService {
         entity.setManagerUserId(request.managerUserId());
         entity.setStatus("ACTIVE");
         userMapper.insert(entity);
+        DataScopeHelper.invalidateAllCache();
         return entity.getId();
     }
 
     @Override
+    @Transactional
     public void updateUser(Long userId, UpdateUserRequest request) {
+        requireT3OrAdmin();
         UserEntity entity = userMapper.selectById(userId);
         if (entity == null) {
             throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "user not found");
@@ -116,6 +134,39 @@ public class UserServiceImpl implements UserService {
             entity.setStatus(request.status());
         }
         userMapper.updateById(entity);
+    }
+
+    @Override
+    @Transactional
+    public void resignUser(Long userId, ResignUserRequest request) {
+        requireT3OrAdmin();
+        UserEntity entity = userMapper.selectById(userId);
+        if (entity == null) {
+            throw new BusinessException(ErrorCodeConstants.NOT_FOUND, "user not found");
+        }
+        // 检查是否有下属
+        Long subordinateCount = userMapper.selectCount(
+                new LambdaQueryWrapper<UserEntity>()
+                        .eq(UserEntity::getManagerUserId, userId)
+                        .eq(UserEntity::getStatus, "ACTIVE")
+        );
+        if (subordinateCount > 0) {
+            throw new BusinessException(ErrorCodeConstants.BAD_REQUEST,
+                    "该成员还有 " + subordinateCount + " 名下属，请先转移下属后再办理离职");
+        }
+        entity.setStatus("DISABLED");
+        entity.setResignReason(request.reason());
+        userMapper.updateById(entity);
+        // 软删除
+        userMapper.deleteById(userId);
+        DataScopeHelper.invalidateAllCache();
+    }
+
+    private void requireT3OrAdmin() {
+        LoginUser currentUser = SecurityUserContext.requireCurrentUser();
+        if (!"T3".equals(currentUser.level())) {
+            throw new BusinessException(ErrorCodeConstants.FORBIDDEN, "无权操作");
+        }
     }
 
     private UserProfileVo toProfileVo(UserEntity entity) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from "vue";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
 import { RouteName } from "@/router/route-names";
@@ -20,7 +20,8 @@ import {
   TrendCharts,
   PieChart,
   Bell,
-  Calendar
+  Calendar,
+  Warning
 } from "@element-plus/icons-vue";
 
 const router = useRouter();
@@ -195,10 +196,28 @@ function handleResize() {
   pieChartInstance?.resize();
 }
 
+function handleStatClick(label: string) {
+  const queryMap: Record<string, Record<string, string>> = {
+    "客户总数": {},
+    "高意向客户": { intent: "很稳" },
+    "本月成交": { progress: "成交" }
+  };
+  router.push({
+    name: RouteName.CustomerList,
+    query: queryMap[label] ?? {}
+  });
+}
+
 onMounted(() => {
   void loadOverview();
   void userStore.loadUsers();
   window.addEventListener("resize", handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", handleResize);
+  trendChartInstance?.dispose();
+  pieChartInstance?.dispose();
 });
 </script>
 
@@ -237,7 +256,7 @@ onMounted(() => {
       </div>
 
       <!-- Stat Cards -->
-      <DashboardStatCards :stats :loading />
+      <DashboardStatCards :stats :loading @click="handleStatClick" />
 
       <!-- Charts -->
       <div class="dashboard-charts">
@@ -277,6 +296,13 @@ onMounted(() => {
             <span>重点客户</span>
           </div>
           <DashboardCustomerList :customers="overview.focusCustomers" :loading />
+        </div>
+        <div class="todo-card">
+          <div class="todo-card__header">
+            <el-icon><Warning /></el-icon>
+            <span>沉默客户（3天未跟进）</span>
+          </div>
+          <DashboardCustomerList :customers="overview.silentCustomers" :loading />
         </div>
       </div>
     </PageSection>

@@ -53,6 +53,11 @@ const router = createRouter({
           component: () => import("@/views/report/WeeklyReportView.vue")
         },
         {
+          path: "reports/plaza",
+          name: RouteName.ReportPlaza,
+          component: () => import("@/views/report/ReportPlazaView.vue")
+        },
+        {
           path: "topics",
           name: RouteName.TopicList,
           component: () => import("@/views/topic/TopicListView.vue")
@@ -63,6 +68,16 @@ const router = createRouter({
           component: () => import("@/views/topic/TopicDetailView.vue")
         },
         {
+          path: "leaderboard",
+          name: RouteName.Leaderboard,
+          component: () => import("@/views/leaderboard/LeaderboardView.vue")
+        },
+        {
+          path: "notifications",
+          name: RouteName.NotificationList,
+          component: () => import("@/views/notification/NotificationListView.vue")
+        },
+        {
           path: "settings/profile",
           name: RouteName.Profile,
           component: () => import("@/views/settings/ProfileView.vue")
@@ -70,7 +85,14 @@ const router = createRouter({
         {
           path: "settings/members",
           name: RouteName.MemberManage,
-          component: () => import("@/views/settings/MemberManageView.vue")
+          component: () => import("@/views/settings/MemberManageView.vue"),
+          beforeEnter: () => {
+            const authStore = useAuthStore();
+            if (authStore.currentUser?.level !== "T3") {
+              return { name: RouteName.Dashboard };
+            }
+            return true;
+          }
         }
       ]
     }

@@ -69,6 +69,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout() {
+        // TODO: Implement token blacklist (e.g., Redis) for stateless JWT logout
+        // For now, client-side token removal is sufficient as tokens are short-lived
     }
 
     private CurrentUserVo toVo(LoginUser loginUser) {

@@ -2,6 +2,7 @@ import request from "@/utils/request";
 import type { ApiResponse, IdResponse } from "@/types/api";
 import type {
   CreateUserRequest,
+  ResignUserRequest,
   UpdatePasswordRequest,
   UpdateProfileRequest,
   UpdateUserRequest,
@@ -40,4 +41,8 @@ export async function createUser(data: CreateUserRequest): Promise<number> {
 
 export async function updateUser(userId: number, data: UpdateUserRequest): Promise<void> {
   await request.put<ApiResponse<null>>(`/users/${userId}`, data);
+}
+
+export async function resignUser(userId: number, data: ResignUserRequest): Promise<void> {
+  await request.delete<ApiResponse<null>>(`/users/${userId}/resign`, { data });
 }

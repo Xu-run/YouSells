@@ -41,4 +41,5 @@ export interface DashboardOverview {
   trendData: TrendDataPoint[];
   todayTasks: DashboardTaskReminder[];
   focusCustomers: DashboardCustomerReminder[];
+  silentCustomers: DashboardCustomerReminder[];
 }

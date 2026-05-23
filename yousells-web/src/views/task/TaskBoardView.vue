@@ -5,7 +5,7 @@ import PageSection from "@/components/app/PageSection.vue";
 import TaskBoardToolbar from "@/components/task/TaskBoardToolbar.vue";
 import TaskBoardColumn from "@/components/task/TaskBoardColumn.vue";
 import TaskEditDialog from "@/components/task/TaskEditDialog.vue";
-import { fetchTaskBoard } from "@/api/task";
+import { fetchTaskBoard, updateTask } from "@/api/task";
 import type { TaskBoardColumn as TaskBoardColumnType, TaskBoardItem } from "@/types/task";
 
 const loading = ref(false);
@@ -43,6 +43,22 @@ async function onTaskSaved() {
   await loadBoard();
 }
 
+async function handleStatusChange(task: TaskBoardItem, newStatus: string) {
+  try {
+    await updateTask(task.id, {
+      taskTitle: task.taskTitle,
+      status: newStatus,
+      priority: task.priority,
+      ownerUserId: task.ownerUserId,
+      dueAt: task.dueAt
+    });
+    ElMessage.success("状态已更新");
+    await loadBoard();
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : "更新失败");
+  }
+}
+
 onMounted(() => {
   void loadBoard();
 });
@@ -67,6 +83,7 @@ onMounted(() => {
           :column="column"
           :loading="loading"
           @task-click="openEditDialog"
+          @task-status-change="handleStatusChange"
         />
       </div>
 

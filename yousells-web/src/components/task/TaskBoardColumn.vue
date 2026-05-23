@@ -2,7 +2,7 @@
 import type { TaskBoardItem, TaskBoardColumn } from "@/types/task";
 import TaskBoardCard from "./TaskBoardCard.vue";
 
-defineProps<{
+const props = defineProps<{
   column: TaskBoardColumn;
   loading: boolean;
 }>();
@@ -11,10 +11,30 @@ const emit = defineEmits<{
   "task-click": [task: TaskBoardItem];
   "task-status-change": [task: TaskBoardItem, newStatus: string];
 }>();
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  const taskId = e.dataTransfer?.getData("text/plain");
+  if (taskId) {
+    const item = props.column.items.find(i => i.id === Number(taskId));
+    if (item && item.status !== props.column.status) {
+      emit("task-status-change", item, props.column.status);
+    }
+  }
+}
 </script>
 
 <template>
-  <div class="board-column" v-loading="loading">
+  <div
+    class="board-column"
+    v-loading="loading"
+    @dragover="onDragOver"
+    @drop="onDrop"
+  >
     <div class="board-column__header">
       <span class="board-column__title">{{ column.title }}</span>
       <el-badge :value="column.items.length" type="primary" />
@@ -26,6 +46,7 @@ const emit = defineEmits<{
           :key="item.id"
           :item="item"
           @click="emit('task-click', item)"
+          @status-change="emit('task-status-change', item, $event)"
         />
       </template>
       <div v-else class="board-column__empty">

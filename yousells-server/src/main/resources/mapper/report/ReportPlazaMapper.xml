@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yousells.modules.report.mapper.ReportPlazaMapper">
+
+    <select id="selectDailyPlaza" resultType="com.yousells.modules.report.vo.ReportPlazaItemVo">
+        SELECT dr.id,
+               'daily' AS type,
+               dr.report_date AS reportDate,
+               NULL AS weekKey,
+               dr.user_id AS userId,
+               u.real_name AS userRealName,
+               u.level AS userLevel,
+               dr.summary,
+               dr.issues,
+               dr.tomorrow_plan AS tomorrowPlan,
+               NULL AS nextWeekPlan,
+               dr.new_customer_count AS newCustomerCount,
+               dr.follow_up_count AS followUpCount,
+               dr.progress_advance_count AS progressAdvanceCount,
+               0 AS convertedCount,
+               dr.task_completed_count AS taskCompletedCount,
+               (SELECT COUNT(*) FROM report_likes WHERE report_type = 'daily' AND report_id = dr.id) AS likeCount,
+               (SELECT COUNT(*) FROM report_comments WHERE report_type = 'daily' AND report_id = dr.id AND is_deleted = 0) AS commentCount,
+               EXISTS(SELECT 1 FROM report_likes WHERE user_id = #{currentUserId} AND report_type = 'daily' AND report_id = dr.id) AS likedByMe,
+               dr.created_at AS createdAt,
+               dr.updated_at AS updatedAt,
+               CASE WHEN dr.updated_at > dr.created_at THEN 1 ELSE 0 END AS edited
+        FROM daily_reports dr
+                 LEFT JOIN users u ON dr.user_id = u.id AND u.is_deleted = 0
+        WHERE dr.is_deleted = 0
+          AND u.status = 'ACTIVE'
+        <if test="filterUserId != null">
+            AND dr.user_id = #{filterUserId}
+        </if>
+        ORDER BY dr.created_at DESC
+    </select>
+
+    <select id="selectWeeklyPlaza" resultType="com.yousells.modules.report.vo.ReportPlazaItemVo">
+        SELECT wr.id,
+               'weekly' AS type,
+               NULL AS reportDate,
+               wr.week_key AS weekKey,
+               wr.user_id AS userId,
+               u.real_name AS userRealName,
+               u.level AS userLevel,
+               wr.summary,
+               wr.issues,
+               NULL AS tomorrowPlan,
+               wr.next_week_plan AS nextWeekPlan,
+               wr.new_customer_count AS newCustomerCount,
+               wr.follow_up_count AS followUpCount,
+               wr.progress_advance_count AS progressAdvanceCount,
+               wr.converted_count AS convertedCount,
+               wr.task_completed_count AS taskCompletedCount,
+               (SELECT COUNT(*) FROM report_likes WHERE report_type = 'weekly' AND report_id = wr.id) AS likeCount,
+               (SELECT COUNT(*) FROM report_comments WHERE report_type = 'weekly' AND report_id = wr.id AND is_deleted = 0) AS commentCount,
+               EXISTS(SELECT 1 FROM report_likes WHERE user_id = #{currentUserId} AND report_type = 'weekly' AND report_id = wr.id) AS likedByMe,
+               wr.created_at AS createdAt,
+               wr.updated_at AS updatedAt,
+               CASE WHEN wr.updated_at > wr.created_at THEN 1 ELSE 0 END AS edited
+        FROM weekly_reports wr
+                 LEFT JOIN users u ON wr.user_id = u.id AND u.is_deleted = 0
+        WHERE wr.is_deleted = 0
+          AND u.status = 'ACTIVE'
+        <if test="filterUserId != null">
+            AND wr.user_id = #{filterUserId}
+        </if>
+        ORDER BY wr.created_at DESC
+    </select>
+
+</mapper>

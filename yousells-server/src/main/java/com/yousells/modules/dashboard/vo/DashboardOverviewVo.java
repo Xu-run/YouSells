@@ -13,6 +13,7 @@ public record DashboardOverviewVo(
         List<IntentDistributionItem> intentDistribution,
         List<TrendDataPoint> trendData,
         List<DashboardTaskReminderVo> todayTasks,
-        List<DashboardCustomerReminderVo> focusCustomers
+        List<DashboardCustomerReminderVo> focusCustomers,
+        List<DashboardCustomerReminderVo> silentCustomers
 ) {
 }
