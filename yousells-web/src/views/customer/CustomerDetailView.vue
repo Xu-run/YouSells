@@ -106,15 +106,6 @@ watch(() => route.params.id, (newId, oldId) => {
               <span class="status-bar__value">{{ detail.progress }}</span>
             </div>
           </div>
-          <div class="status-bar__actions">
-            <el-button
-              type="primary"
-              size="small"
-              @click="router.push({ name: 'customer-detail', params: { id: detail.id }, query: { tab: 'followup' } })"
-            >
-              写跟进
-            </el-button>
-          </div>
         </div>
 
         <div class="customer-detail-grid">
