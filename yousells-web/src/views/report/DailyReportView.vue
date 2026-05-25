@@ -8,6 +8,7 @@ import { fetchDailyReport, fetchDailyReportHistory } from "@/api/report";
 import type { DailyReport } from "@/types/report";
 
 const loading = ref(false);
+const editing = ref(false);
 const report = ref<DailyReport | null>(null);
 const history = ref<DailyReport[]>([]);
 const historyTotal = ref(0);
@@ -48,6 +49,16 @@ function onSubmitted() {
   void loadHistory(1);
 }
 
+function onUpdated() {
+  editing.value = false;
+  void loadTodayReport();
+  void loadHistory(1);
+}
+
+function onEditCancel() {
+  editing.value = false;
+}
+
 onMounted(() => {
   void loadTodayReport();
   void loadHistory();
@@ -63,8 +74,11 @@ onMounted(() => {
       <div class="report-page-grid">
         <div class="report-page-grid__form">
           <div v-if="loading" v-loading="true" style="min-height:200px" />
-          <div v-else-if="submitted" class="report-form-card">
-            <h3 class="report-form-card__title">今日日报</h3>
+          <div v-else-if="submitted && !editing" class="report-form-card">
+            <div class="report-form-card__header">
+              <h3 class="report-form-card__title">今日日报</h3>
+              <el-button type="primary" size="small" @click="editing = true">编辑</el-button>
+            </div>
             <el-alert type="info" :closable="false" style="margin-bottom:16px">
               此日报已提交，当天内可修改
             </el-alert>
@@ -87,6 +101,7 @@ onMounted(() => {
               <el-tag size="small" type="info">完成任务 {{ report?.taskCompletedCount ?? 0 }}</el-tag>
             </div>
           </div>
+          <DailyReportForm v-else-if="editing" :edit-report="report" @updated="onUpdated" @cancel="onEditCancel" />
           <DailyReportForm v-else @submitted="onSubmitted" />
         </div>
         <div class="report-page-grid__history">
@@ -120,8 +135,15 @@ onMounted(() => {
   padding: 20px;
   border: 1px solid var(--color-border);
 }
+.report-form-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
 .report-form-card__title {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 18px;
 }
 .readonly-field {

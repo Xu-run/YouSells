@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, watch } from "vue";
 import { ElMessage } from "element-plus";
-import type { DailyReportCreateRequest } from "@/types/report";
-import { createDailyReport } from "@/api/report";
+import type { DailyReport, DailyReportCreateRequest } from "@/types/report";
+import { createDailyReport, updateDailyReport } from "@/api/report";
+
+const props = defineProps<{
+  editReport?: DailyReport | null;
+}>();
 
 const emit = defineEmits<{
   submitted: [];
+  updated: [];
+  cancel: [];
 }>();
 
 const submitting = ref(false);
 const formRef = ref();
+const isEditing = ref(false);
 
 const form = reactive<DailyReportCreateRequest>({
   reportDate: new Date().toISOString().slice(0, 10),
@@ -17,6 +24,16 @@ const form = reactive<DailyReportCreateRequest>({
   issues: null,
   tomorrowPlan: ""
 });
+
+watch(() => props.editReport, (report) => {
+  if (report) {
+    isEditing.value = true;
+    form.reportDate = report.reportDate;
+    form.summary = report.summary;
+    form.issues = report.issues;
+    form.tomorrowPlan = report.tomorrowPlan;
+  }
+}, { immediate: true });
 
 const rules = {
   reportDate: [{ required: true, message: "请选择日期", trigger: "change" }],
@@ -30,28 +47,44 @@ async function submit() {
 
   submitting.value = true;
   try {
-    await createDailyReport({
-      reportDate: form.reportDate,
-      summary: form.summary,
-      issues: form.issues || null,
-      tomorrowPlan: form.tomorrowPlan
-    });
-    form.summary = "";
-    form.issues = null;
-    form.tomorrowPlan = "";
-    emit("submitted");
-    ElMessage.success("日报已提交");
+    if (isEditing.value && props.editReport) {
+      await updateDailyReport(props.editReport.id, {
+        reportDate: form.reportDate,
+        summary: form.summary,
+        issues: form.issues || null,
+        tomorrowPlan: form.tomorrowPlan
+      });
+      ElMessage.success("日报已更新");
+      emit("updated");
+    } else {
+      await createDailyReport({
+        reportDate: form.reportDate,
+        summary: form.summary,
+        issues: form.issues || null,
+        tomorrowPlan: form.tomorrowPlan
+      });
+      form.summary = "";
+      form.issues = null;
+      form.tomorrowPlan = "";
+      emit("submitted");
+      ElMessage.success("日报已提交");
+    }
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : "提交失败");
+    ElMessage.error(e instanceof Error ? e.message : (isEditing.value ? "更新失败" : "提交失败"));
   } finally {
     submitting.value = false;
   }
+}
+
+function handleCancel() {
+  isEditing.value = false;
+  emit("cancel");
 }
 </script>
 
 <template>
   <div class="report-form-card">
-    <h3 class="report-form-card__title">提交日报</h3>
+    <h3 class="report-form-card__title">{{ isEditing ? '编辑日报' : '提交日报' }}</h3>
     <el-form
       ref="formRef"
       :model="form"
@@ -101,8 +134,9 @@ async function submit() {
         :loading="submitting"
         @click="submit"
       >
-        提交日报
+        {{ isEditing ? '保存修改' : '提交日报' }}
       </el-button>
+      <el-button v-if="isEditing" @click="handleCancel">取消</el-button>
     </el-form>
   </div>
 </template>
