@@ -18,7 +18,79 @@
 
 ---
 
-## 二、前后端接口契约
+## 二、数据流设计
+
+### 每日数据来源全景
+
+哲涛的模块 **不创造新数据**，而是**聚合已有数据**交给 AI 总结。理解数据从哪里来是核心：
+
+```
+当前用户 userId=1, date=2026-05-25
+
+  customers 表                     task_boards 表
+  │                                │
+  │ creator_user_id=1              │ owner_user_id=1
+  │ created_at = 2026-05-25        │ (看板已按状态展示)
+  ├─ 今日新增: 3 个客户             │
+  │ (张三/李四/王五)               ├─ 待开始: 1 条
+  │                                ├─ 进行中: 2 条
+  │                                └─ 已完成: 1 条 → 查 task_logs
+  │                                                   │
+  customer_follow_ups 表            task_logs 表
+  │                                │
+  │ customer_id IN (可看客户)       │ task_id IN (我的任务)
+  │ created_at = 2026-05-25        │ created_at = 2026-05-25
+  ├─ 张三: 跟进1次(进度:技术栈)     ├─ 完成: "修复登录页样式"
+  ├─ 李四: 跟进2次(进度:课程)       └─ 完成: "更新客户导入模板"
+  └─ 陈七: 跟进1次(意向:冷淡)
+       │
+       └─ progress 变化的客户 → 推进客户列表
+```
+
+### 数据聚合流程
+
+```
+POST /api/reports/daily/ai-generate  { date: "2026-05-25" }
+       │
+       ▼
+ReportServiceImpl.generateDaily(date, currentUser)
+       │
+       ├─(1)─► customerMapper.selectByCreatorAndDate(userId, date)      → 今日新增客户
+       ├─(2)─► followUpMapper.selectByUserAndDate(userId, date)          → 今日跟进记录
+       ├─(3)─► taskLogMapper.selectByUserAndDate(userId, date, "完成")   → 今日完成任务
+       ├─(4)─► followUpMapper.selectProgressChanged(userId, date)        → 推进客户
+       │
+       ├─(5)─► 组装 Prompt(
+       │         用户: currentUser.realName
+       │         日期: date
+       │         新增客户: [姓名/年级/意向/专业]
+       │         跟进记录: [客户名/进度/内容/反馈/下一步]
+       │         完成任务: [任务标题]
+       │         推进客户: [客户名 旧进度→新进度]
+       │       )
+       │
+       ├─(6)─► aiService.generate(prompt, AiDailyReportSuggestion.class)
+       │         → { summary, issues, tomorrowPlan, stats }
+       │
+       └─(7)─► 返回前端（不落库）
+```
+
+### 周报数据来源
+
+```
+POST /api/reports/weekly/ai-generate  { weekKey: "2026-W12" }
+       │
+       ├─ 优先: 查 daily_reports WHERE user_id=? AND week=?
+       │        → 提取每篇的 summary + issues
+       │        → 汇总为:"本周完成了X次跟进，推进了Y个客户..."
+       │
+       └─ 降级(无日报): 同日报逻辑, 时间范围扩展到整周
+```
+
+### 关键约束
+- **不落库**：AI 生成的是建议，不自动创建日报/周报，用户确认后才通过现有表单提交
+- **数据权限**：所有查询限定 `userId = currentUser`，只看自己的数据
+- **空数据**：今日无活动 → 直接返回空建议 `{ summary: "今日暂无工作记录" }`，不调 LLM
 
 ### 2.1 POST `/api/reports/daily/ai-generate`
 

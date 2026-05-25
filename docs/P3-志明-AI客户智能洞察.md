@@ -19,7 +19,78 @@
 
 ---
 
-## 二、前后端接口契约
+## 二、数据流设计
+
+### 整体架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                       前端 (Vue)                            │
+│  CustomerDetailView → AiInsightPanel                        │
+│       │ GET /api/customers/{id}/ai-insight                  │
+│       │ POST /api/customers/{id}/ai-insight/refresh         │
+└───────┼─────────────────────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────────────────────────────────────┐
+│                   后端 (Spring Boot)                          │
+│                                                               │
+│  CustomerController                                           │
+│       │                                                       │
+│       ▼                                                       │
+│  CustomerServiceImpl.getAiInsight(id)                         │
+│       │                                                       │
+│       ├─(1)─► ai_insight_cache (MySQL) ── 命中 → 直接返回     │
+│       │                                                       │
+│       └─(2)─► 缓存未命中:                                     │
+│                │                                              │
+│                ├─ 查 customer 表 → 客户基本信息                │
+│                ├─ 查 customer_follow_ups → 跟进历史(最近20条)  │
+│                │                                              │
+│                ├─ 组装 Prompt ──► AiService.generate()        │
+│                │                    │                         │
+│                │                    ▼                         │
+│                │              LLM API (外部)                   │
+│                │                    │                         │
+│                │                    ▼                         │
+│                │              解析 JSON → AiInsightResponse   │
+│                │                                              │
+│                ├─ 写入 ai_insight_cache (TTL 2h)              │
+│                └─ 返回 AiInsightResponse                      │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### 数据来源
+
+| 数据 | 来源 | 查询方式 |
+|---|---|---|
+| 客户基本信息 | `customers` 表 | 已有 `customerMapper.selectById(id)` |
+| 跟进历史 | `customer_follow_ups` 表 | 已有 `followUpMapper.selectByCustomerId(id)` |
+| AI 洞察缓存 | `ai_insight_cache` 表（新建） | 新建 `AiInsightCacheMapper` |
+
+### 缓存策略
+
+```
+读流程:
+  请求 → 查 ai_insight_cache WHERE customer_id=? AND expires_at > NOW()
+         → 命中: 返回缓存的 insight_json
+         → 未命中: 走完整 AI 分析流程 → 写入缓存 → 返回
+
+写流程:
+  AI 生成完成 → INSERT INTO ai_insight_cache (customer_id, insight_json, generated_at, expires_at)
+              → expires_at = NOW() + 2h
+
+刷新:
+  POST /refresh → 跳过缓存 → 重新生成 → UPDATE 覆盖缓存
+
+新增跟进时:
+  FollowUpService 创建跟进 → 检查该客户是否有缓存 → 有则标记过期
+```
+
+### 关键约束
+- **数据权限**：只能看自己能看到的客户（复用 `resolveVisibleOwnerIds()`）
+- **Token 上限**：跟进记录最多取 20 条传入 Prompt，超过截断
+- **无跟进客户**：不调 LLM，直接返回默认洞察（confidence=0, summary="暂无足够跟进记录"）
 
 ### 2.1 GET `/api/customers/{id}/ai-insight`
 
